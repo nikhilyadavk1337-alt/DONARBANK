@@ -24,9 +24,11 @@
         :root { --bg-dark: #050505; --card-bg: rgba(20, 20, 20, 0.6); --accent: #e11d48; }
         body { background-color: var(--bg-dark); color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; scroll-behavior: smooth; }
         
+        /* Premium Glassmorphism & Bento Grid */
         .bento-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.4s, border-color 0.4s, box-shadow 0.4s; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden;}
         .bento-card:hover { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 10px 40px rgba(225, 29, 72, 0.15); }
         
+        /* Custom Inputs */
         .modern-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 16px; color: white; width: 100%; transition: all 0.3s; }
         .modern-input:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: inset 0 0 0 1px var(--accent); }
         
@@ -34,9 +36,11 @@
         .page-section.active { display: block; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
         
+        /* Loader Spinner */
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Ambient Background Glows */
         .glow-blob { position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; animation: drift 10s ease-in-out infinite alternate; pointer-events: none;}
         @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, -50px) scale(1.1); } }
         
@@ -59,11 +63,13 @@
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 60; backdrop-filter: blur(15px); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
 
+        /* Admin Tabs */
         .admin-tab { cursor: pointer; padding: 10px 20px; border-bottom: 2px solid transparent; transition: all 0.3s; font-weight: bold; color: gray; }
         .admin-tab.active { border-bottom: 2px solid #f59e0b; color: white; }
         .admin-panel { display: none; }
         .admin-panel.active { display: block; animation: fadeUp 0.4s ease forwards; }
 
+        /* Auth Tabs */
         .auth-panel { display: none; animation: fadeUp 0.4s forwards; }
         .auth-panel.active { display: block; }
         
@@ -79,6 +85,16 @@
         .doc-content p { margin-bottom: 1rem; color: #9ca3af; line-height: 1.7; }
         .doc-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; color: #9ca3af; }
         .doc-content li { margin-bottom: 0.5rem; }
+
+        /* 3D Interactive Card Setup for About Us */
+        .tilt-card-wrapper { perspective: 1000px; display: flex; justify-content: center; }
+        .tilt-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; backdrop-filter: blur(20px); transform-style: preserve-3d; transition: transform 0.1s ease-out, border-color 0.3s, box-shadow 0.3s; will-change: transform; cursor: default; width: 100%; position: relative; }
+        .tilt-card:hover { border-color: var(--accent); box-shadow: 0 20px 40px rgba(225, 29, 72, 0.2); }
+        .tilt-content { transform: translateZ(60px); transform-style: preserve-3d; }
+        .profile-img { transform: translateZ(90px); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        .social-bar { transform: translateZ(70px); }
+        .social-btn { transition: all 0.3s ease; }
+        .social-btn:hover { transform: translateY(-5px) scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative" onload="initApp()">
@@ -116,6 +132,7 @@
             <button onclick="navToMobile('home')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Platform</button>
             <button onclick="navToMobile('network')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Network Map</button>
             <button onclick="navToMobile('contact')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Contact & Support</button>
+            <button onclick="navToMobile('about')" class="hover:text-white transition w-full border-b border-white/10 pb-4">About Us</button>
             <button onclick="navToMobile('dashboard')" id="mob-nav-dashboard" class="hidden hover:text-white transition w-full border-b border-white/10 pb-4">Dashboard</button>
             <button onclick="navToMobile('hospital')" id="mob-nav-hospital" class="hidden text-blue-400 transition w-full border-b border-white/10 pb-4">Hospital OS</button>
             <button onclick="navToMobile('admin')" id="mob-nav-admin" class="hidden text-amber-400 transition w-full border-b border-white/10 pb-4">Admin Center</button>
@@ -146,7 +163,7 @@
                 
                 <div class="flex-1 relative animate-float w-full max-w-lg mt-10 xl:mt-0">
                     <div class="absolute inset-0 bg-rose-500 blur-[80px] opacity-20 rounded-full"></div>
-                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="Medical professional holding a blood bag" class="relative z-10 rounded-3xl border border-gray-800 shadow-2xl object-cover h-[350px] xl:h-[450px] w-full">
+                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="A medical professional holding a blood bag representing our digital blood donation network" class="relative z-10 rounded-3xl border border-gray-800 shadow-2xl object-cover h-[350px] xl:h-[450px] w-full">
                 </div>
             </div>
 
@@ -160,6 +177,120 @@
                     <div class="absolute top-0 right-0 p-6 text-6xl text-blue-500/20"><i class="fa-solid fa-fingerprint"></i></div>
                     <h3 class="font-bold text-xl mb-2 text-white">Zero Trust Issues</h3>
                     <p class="text-gray-400 text-sm font-medium">Aadhaar/DL verification ensures the network remains secure and reliable.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="page-section pt-10 pb-20">
+            <div class="max-w-7xl mx-auto space-y-16">
+                <div class="text-center space-y-4">
+                    <h1 class="text-4xl lg:text-6xl font-black tracking-tight text-white">Meet the <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-400">Architects.</span></h1>
+                    <p class="text-gray-400 max-w-2xl mx-auto text-lg">We are a team of developers building the next generation of emergency medical logistics.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    
+                    <div class="tilt-card-wrapper">
+                        <div class="tilt-card p-8 text-center" onmousemove="tiltEffect(event, this)" onmouseleave="resetTilt(this)">
+                            <div class="tilt-content flex flex-col items-center w-full">
+                                <img src="https://ui-avatars.com/api/?name=Ashish+Kumar&background=e11d48&color=fff&size=200&font-size=0.4&bold=true" alt="Ashish Kumar" class="w-32 h-32 rounded-full border-4 border-rose-500/50 object-cover mb-4 profile-img">
+                                <h3 class="text-2xl font-bold text-white">Ashish Kumar</h3>
+                                <p class="text-rose-400 font-bold text-[10px] uppercase tracking-widest mt-2 border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 rounded-full inline-block">Backend & Systems Lead</p>
+                                <p class="text-gray-400 text-sm mt-4 leading-relaxed h-20">Engineered the core Python Flask architecture, real-time Socket.io websockets, and PostgreSQL database schemas.</p>
+                                
+                                <div class="flex gap-3 mt-6 social-bar">
+                                    <a href="https://github.com/ashishkumar9589411421-svg" target="_blank" class="social-btn w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-rose-500 hover:border-rose-500" title="GitHub">
+                                        <i class="fa-brands fa-github text-lg"></i>
+                                    </a>
+                                    <a href="https://ashishkumar9589411421-svg.github.io/portfolio_v27-11-25/" target="_blank" class="social-btn w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-rose-500 hover:border-rose-500" title="Portfolio">
+                                        <i class="fa-solid fa-globe text-lg"></i>
+                                    </a>
+                                    <a href="https://www.linkedin.com/in/ashish-kumar-445964324/" target="_blank" class="social-btn w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-rose-500 hover:border-rose-500" title="LinkedIn">
+                                        <i class="fa-brands fa-linkedin-in text-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tilt-card-wrapper">
+                        <div class="tilt-card p-8 text-center" onmousemove="tiltEffect(event, this)" onmouseleave="resetTilt(this)">
+                            <div class="tilt-content flex flex-col items-center w-full">
+                                <img src="https://ui-avatars.com/api/?name=Nikhil+Yadav&background=3b82f6&color=fff&size=200&font-size=0.4&bold=true" alt="Nikhil Yadav" class="w-32 h-32 rounded-full border-4 border-blue-500/50 object-cover mb-4 profile-img">
+                                <h3 class="text-2xl font-bold text-white">Nikhil Yadav</h3>
+                                <p class="text-blue-400 font-bold text-[10px] uppercase tracking-widest mt-2 border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 rounded-full inline-block">Frontend & UI/UX Architect</p>
+                                <p class="text-gray-400 text-sm mt-4 leading-relaxed h-20">Designed the immersive Dark Mode Bento-grid interface, Tailwind styling, and complex interactive animations.</p>
+                                
+                                <div class="flex gap-3 mt-6 social-bar justify-center">
+                                    <a href="https://www.linkedin.com/in/nikhil-yadav-7a1b00322?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" class="social-btn w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-blue-500 hover:border-blue-500" title="LinkedIn">
+                                        <i class="fa-brands fa-linkedin-in text-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tilt-card-wrapper">
+                        <div class="tilt-card p-8 text-center" onmousemove="tiltEffect(event, this)" onmouseleave="resetTilt(this)">
+                            <div class="tilt-content flex flex-col items-center w-full">
+                                <img src="https://ui-avatars.com/api/?name=Sumait+Kumar&background=f59e0b&color=fff&size=200&font-size=0.4&bold=true" alt="Sumait Kumar" class="w-32 h-32 rounded-full border-4 border-amber-500/50 object-cover mb-4 profile-img">
+                                <h3 class="text-2xl font-bold text-white">Sumait Kumar</h3>
+                                <p class="text-amber-400 font-bold text-[10px] uppercase tracking-widest mt-2 border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 rounded-full inline-block">GIS & Database Specialist</p>
+                                <p class="text-gray-400 text-sm mt-4 leading-relaxed h-20">Integrated Maps API, dynamic geospatial routing, demand heatmaps, and secure Razorpay payment gateways.</p>
+                                
+                                <div class="flex gap-3 mt-6 social-bar justify-center">
+                                    <a href="#" target="_blank" class="social-btn w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white hover:bg-amber-500 hover:border-amber-500" title="LinkedIn">
+                                        <i class="fa-brands fa-linkedin-in text-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-20">
+                    <h2 class="text-3xl font-black text-white mb-8 text-center">About The <span class="text-rose-500">LifeDrop</span> Project</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="col-span-1 lg:col-span-7 bento-card p-8 lg:p-10 relative overflow-hidden">
+                            <i class="fa-solid fa-truck-medical absolute -bottom-10 -right-10 text-[150px] text-white/5 transform -scale-x-100 rotate-12 pointer-events-none"></i>
+                            <h3 class="text-2xl font-bold mb-4 flex items-center gap-3 text-white"><i class="fa-solid fa-bullseye text-rose-500"></i> The Problem We Solved</h3>
+                            <p class="text-gray-300 leading-relaxed mb-6 font-medium">
+                                During medical emergencies, finding the right blood group at the right time is a massive logistical nightmare. Hospitals struggle with inventory visibility, and patients rely on slow social media broadcasts. 
+                                <strong>LifeDrop</strong> acts as an automated Operating System that instantly pings verified donors based on real-time GPS proximity.
+                            </p>
+                            <div class="bg-black/40 rounded-xl p-5 border border-white/5">
+                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Core Modules Inside The App</h4>
+                                <ul class="space-y-3">
+                                    <li class="flex items-start gap-3 text-sm text-gray-300"><i class="fa-solid fa-satellite-dish text-blue-400 mt-1"></i> <div><b class="text-white">Live Geolocation Tracking:</b> Instantly scans a defined radius to locate active donors.</div></li>
+                                    <li class="flex items-start gap-3 text-sm text-gray-300"><i class="fa-solid fa-hospital text-green-400 mt-1"></i> <div><b class="text-white">Hospital OS:</b> Dedicated dashboards for medical facilities to sync their live blood unit inventory globally.</div></li>
+                                    <li class="flex items-start gap-3 text-sm text-gray-300"><i class="fa-solid fa-bolt text-amber-400 mt-1"></i> <div><b class="text-white">Priority Boosting:</b> Integrated payment proofs to prioritize emergency signals above normal traffic.</div></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-span-1 lg:col-span-5 bento-card p-8 lg:p-10">
+                            <h3 class="text-2xl font-bold mb-6 flex items-center gap-3 text-white"><i class="fa-solid fa-microchip text-blue-500"></i> The Technology Stack</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center text-xl text-[#3776AB]"><i class="fa-brands fa-python"></i></div>
+                                    <div><h4 class="font-bold text-white text-sm">Python / Flask API</h4><p class="text-xs text-gray-400">Robust backend handling routes and auth.</p></div>
+                                </div>
+                                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center text-xl text-[#336791]"><i class="fa-solid fa-database"></i></div>
+                                    <div><h4 class="font-bold text-white text-sm">PostgreSQL (Supabase)</h4><p class="text-xs text-gray-400">Complex relational data & geospatial indexing.</p></div>
+                                </div>
+                                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center text-xl text-white"><i class="fa-solid fa-bolt"></i></div>
+                                    <div><h4 class="font-bold text-white text-sm">Socket.IO</h4><p class="text-xs text-gray-400">Real-time WebSockets for emergency alerts.</p></div>
+                                </div>
+                                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center text-xl text-[#38B2AC]"><i class="fa-solid fa-palette"></i></div>
+                                    <div><h4 class="font-bold text-white text-sm">HTML/CSS/JS + Tailwind</h4><p class="text-xs text-gray-400">Responsive frontend logic and modern styling.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -254,6 +385,7 @@
 
         <section id="dashboard" class="page-section max-w-7xl mx-auto mt-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
                 <div class="lg:col-span-4 bento-card p-6 lg:p-8">
                     <div class="flex items-center gap-4 mb-8">
                         <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg"><i class="fa-solid fa-user"></i></div>
@@ -262,6 +394,7 @@
                             <span id="dash-badge" class="hidden mt-1 inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/20 uppercase"><i class="fa-solid fa-certificate"></i> Verified</span>
                         </div>
                     </div>
+                    
                     <form id="profile-form" class="space-y-4">
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Full Name</label>
@@ -330,7 +463,7 @@
                         <div id="dash-lists" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
                     </div>
 
-                    <div class="bento-card p-6 lg:p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden shadow-2xl">
+                    <div class="bento-card p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden">
                         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-[#d4af37]/10 to-transparent pointer-events-none"></div>
                         <div class="absolute -right-10 -bottom-10 text-[#d4af37]/5 text-[150px] pointer-events-none transform rotate-12"><i class="fa-solid fa-crown"></i></div>
                         <div class="relative z-10 max-w-lg">
@@ -350,6 +483,7 @@
         <section id="hospital" class="page-section max-w-7xl mx-auto mt-6">
             <div class="bento-card p-6 lg:p-10 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+                
                 <div class="flex items-center gap-4 mb-10">
                     <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-regular fa-hospital"></i></div>
                     <div><h2 class="font-black text-2xl lg:text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-bold text-xs uppercase tracking-widest mt-1">Inventory Console</p></div>
@@ -590,14 +724,14 @@
                 <div class="flex gap-4">
                     <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-twitter"></i></a>
                     <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-linkedin-in"></i></a>
-                    <a href="https://github.com/nikhilyadavk1337-alt" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-github"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-github"></i></a>
                 </div>
             </div>
             
             <div>
                 <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Platform</h4>
                 <ul class="space-y-3 text-sm text-gray-400 flex flex-col items-start">
-                    <li><button onclick="navTo('home')" class="footer-link">About LifeDrop</button></li>
+                    <li><button onclick="navTo('about')" class="footer-link">About LifeDrop</button></li>
                     <li><button onclick="navTo('network')" class="footer-link">Live Network Map</button></li>
                     <li><button onclick="navTo('hospital-partners')" class="footer-link">Hospital Partnerships</button></li>
                     <li><button onclick="navTo('ai-routing')" class="footer-link">How AI Routing Works</button></li>
@@ -700,6 +834,19 @@
     <script>
         const API = "/api";
         let userCoords = null, socket = null, map = null, heatmap = null, markers = [], layerGroup = null;
+
+        // About Us Tilt Effect
+        function tiltEffect(event, element) {
+            const rect = element.getBoundingClientRect();
+            const x = event.clientX - rect.left; 
+            const y = event.clientY - rect.top;  
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -12; 
+            const rotateY = ((x - centerX) / centerX) * 12;
+            element.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        }
+        function resetTilt(element) { element.style.transform = `rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; }
 
         // Auth Tabs Logic
         function switchAuthTab(tab) {
@@ -1083,7 +1230,7 @@
                 
                 document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
-                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="flex gap-2"><a href="/uploads/${p.screenshot_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect Ledger</a><button onclick="adminAction('approve_payment', ${p.id})" class="flex-1 bg-[#d4af37] text-black py-2.5 rounded-lg text-xs font-bold hover:bg-[#c5a028] transition">Verify Boost</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
+                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="text-xs font-mono text-gray-400">Status: <span class="${p.status==='approved'?'text-green-500':'text-yellow-500'} uppercase font-bold">${p.status}</span></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
                 document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.name} (${e.email})</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
             }
