@@ -63,6 +63,10 @@
         /* Auth Tabs */
         .auth-panel { display: none; animation: fadeUp 0.4s forwards; }
         .auth-panel.active { display: block; }
+        
+        /* Footer Links Hover */
+        .footer-link { transition: color 0.3s ease; }
+        .footer-link:hover { color: var(--accent); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative" onload="initApp()">
@@ -78,12 +82,13 @@
             <span class="tracking-tight">LifeDrop</span>
         </div>
         
-        <div class="hidden xl:flex gap-8 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
+        <div class="hidden xl:flex gap-6 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
             <button onclick="navTo('home')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Platform</button>
             <button onclick="navTo('network')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Network Map</button>
             <button onclick="navTo('dashboard')" id="nav-dashboard" class="hidden hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Dashboard</button>
             <button onclick="navTo('hospital')" id="nav-hospital" class="hidden text-blue-400 font-bold transition px-2 py-1 rounded hover:bg-blue-400/10">Hospital OS</button>
-            <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin Center</button>
+            <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin</button>
+            <button onclick="navTo('contact')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Support</button>
         </div>
 
         <div class="hidden xl:flex gap-4 items-center shrink-0">
@@ -102,6 +107,7 @@
         <div class="flex flex-col gap-6 text-2xl font-bold text-center text-gray-300 w-full px-8 max-w-sm mx-auto">
             <button onclick="navToMobile('home')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Platform</button>
             <button onclick="navToMobile('network')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Network Map</button>
+            <button onclick="navToMobile('contact')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Contact & Support</button>
             <button onclick="navToMobile('dashboard')" id="mob-nav-dashboard" class="hidden hover:text-white transition w-full border-b border-white/10 pb-4">Dashboard</button>
             <button onclick="navToMobile('hospital')" id="mob-nav-hospital" class="hidden text-blue-400 transition w-full border-b border-white/10 pb-4">Hospital OS</button>
             <button onclick="navToMobile('admin')" id="mob-nav-admin" class="hidden text-amber-400 transition w-full border-b border-white/10 pb-4">Admin Center</button>
@@ -110,45 +116,96 @@
         </div>
     </div>
 
-    <main class="flex-grow container mx-auto p-4 xl:mt-8">
+    <main class="flex-grow container mx-auto p-4 xl:mt-8 mb-20">
 
-        <section id="home" class="page-section active pt-4 xl:pt-10 pb-24">
+        <section id="home" class="page-section active pt-4 xl:pt-10">
             <div class="flex flex-col xl:flex-row items-center justify-between gap-12 xl:gap-16 max-w-7xl mx-auto">
                 <div class="flex-1 text-center xl:text-left">
                     <div class="inline-block border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs font-bold px-3 py-1 rounded-full mb-6 uppercase tracking-wider shadow-sm">LifeDrop OS v2.0</div>
-                    <h1 class="text-4xl sm:text-5xl xl:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] text-white">
+                    <h1 class="text-5xl sm:text-6xl xl:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] text-white">
                         The Operating System for <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-400">Humanity.</span>
                     </h1>
-                    <p class="text-gray-400 text-base xl:text-xl mb-10 max-w-xl mx-auto xl:mx-0 font-medium leading-relaxed">Geospatial matching, AI demand prediction, and verified donor routing in milliseconds. When seconds dictate survival.</p>
-                    <div class="flex justify-center xl:justify-start gap-4">
+                    <p class="text-gray-400 text-lg xl:text-xl mb-10 max-w-xl mx-auto xl:mx-0 font-medium leading-relaxed">Geospatial matching, AI demand prediction, and verified donor routing in milliseconds. When seconds dictate survival.</p>
+                    <div class="flex flex-col sm:flex-row justify-center xl:justify-start gap-4">
                         <button onclick="navTo('network')" class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-4 rounded-full font-bold text-base transition shadow-[0_0_20px_rgba(225,29,72,0.4)]">
                             Enter Live Network <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
+                        <button onclick="navTo('contact')" class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-full font-bold text-base transition border border-white/10">
+                            Partner With Us
+                        </button>
                     </div>
                 </div>
+                
                 <div class="flex-1 relative animate-float w-full max-w-lg mt-10 xl:mt-0">
-                    <div class="absolute inset-0 bg-rose-500 blur-[60px] opacity-20 rounded-full"></div>
-                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="Medical professional holding a blood bag" class="relative z-10 rounded-3xl border border-white/10 shadow-2xl object-cover h-[300px] xl:h-[400px] w-full">
+                    <div class="absolute inset-0 bg-rose-500 blur-[80px] opacity-20 rounded-full"></div>
+                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="A medical professional holding a blood bag representing our digital blood donation network" class="relative z-10 rounded-3xl border border-gray-800 shadow-2xl object-cover h-[350px] xl:h-[450px] w-full">
                 </div>
             </div>
 
-            <div class="bento-card p-6 xl:p-10 mt-20 xl:mt-32 max-w-7xl mx-auto border-blue-500/20 relative overflow-hidden">
-                <div class="absolute -right-20 -top-20 text-[200px] text-blue-500/5 rotate-12 pointer-events-none"><i class="fa-solid fa-file-medical"></i></div>
-                <div class="flex flex-col lg:flex-row gap-10 items-center relative z-10">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-4"><div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-500/30"><i class="fa-solid fa-bullseye text-blue-400 text-xl"></i></div><h3 class="font-bold text-2xl xl:text-3xl text-white">The Problem Statement</h3></div>
-                        <p class="text-gray-300 text-sm xl:text-base leading-relaxed mb-6 font-medium">Hospitals and patients often struggle to find blood donors during medical emergencies, leading to delays in treatment. Our objective is to develop a digital platform that efficiently connects blood donors, hospitals, and patients.</p>
-                        <div class="bg-black/30 p-5 rounded-xl border border-white/5">
-                            <h4 class="font-bold text-sm text-gray-400 uppercase tracking-widest mb-3">Core Features Built</h4>
-                            <ul class="text-white text-sm space-y-3 font-medium">
-                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Donor registration and comprehensive blood group database</li>
-                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Nearby blood bank locator utilizing high-precision GPS</li>
-                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Instant emergency blood request alerts directly to donors</li>
-                            </ul>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-32 max-w-7xl mx-auto">
+                <div class="bento-card p-8 md:col-span-2 flex flex-col justify-end min-h-[300px] relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-6 text-6xl text-rose-500/20 group-hover:scale-110 transition"><i class="fa-solid fa-microchip"></i></div>
+                    <h3 class="font-bold text-2xl mb-2 text-white relative z-10">Algorithmic Dispatch</h3>
+                    <p class="text-gray-400 font-medium relative z-10">We don't blast emails. Our AI calculates distance (Haversine), trust score, and cooldowns to ping the exact right donor.</p>
+                </div>
+                <div class="bento-card p-8 md:col-span-1 flex flex-col justify-end min-h-[300px] relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-6 text-6xl text-blue-500/20"><i class="fa-solid fa-fingerprint"></i></div>
+                    <h3 class="font-bold text-xl mb-2 text-white">Zero Trust Issues</h3>
+                    <p class="text-gray-400 text-sm font-medium">Aadhaar/DL verification ensures the network remains secure and reliable.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="page-section pt-10">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-black text-white mb-4">How can we help?</h2>
+                    <p class="text-gray-400 text-lg">Whether you're a hospital needing API access or a user with a question, our team is here.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+                    <div class="space-y-6">
+                        <div class="bento-card p-8 flex items-start gap-6 border-l-4 border-l-rose-500">
+                            <div class="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center text-rose-500 text-xl shrink-0"><i class="fa-solid fa-location-dot"></i></div>
+                            <div>
+                                <h3 class="text-white font-bold text-lg mb-1">Headquarters</h3>
+                                <p class="text-gray-400 text-sm leading-relaxed">Kanpur, Uttar Pradesh<br>India - 208001</p>
+                            </div>
+                        </div>
+                        <div class="bento-card p-8 flex items-start gap-6 border-l-4 border-l-blue-500">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-500 text-xl shrink-0"><i class="fa-solid fa-envelope"></i></div>
+                            <div>
+                                <h3 class="text-white font-bold text-lg mb-1">Email Support</h3>
+                                <p class="text-gray-400 text-sm leading-relaxed">support@byashish.online<br>enterprise@byashish.online</p>
+                            </div>
+                        </div>
+                        <div class="bento-card p-8 flex items-start gap-6 border-l-4 border-l-green-500">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-500 text-xl shrink-0"><i class="fa-solid fa-phone"></i></div>
+                            <div>
+                                <h3 class="text-white font-bold text-lg mb-1">24/7 Helpline</h3>
+                                <p class="text-gray-400 text-sm leading-relaxed">+91 1800-LIFEDROP<br>(Emergency queries only)</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex-1 w-full bg-black/50 p-4 xl:p-6 rounded-2xl border border-white/10 shadow-inner">
-                        <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800" alt="Hospitals and patients struggle to find blood donors" class="w-full h-auto rounded-xl shadow-lg opacity-90 hover:opacity-100 transition duration-500 hover:scale-[1.02]">
+
+                    <div class="bento-card p-8 md:p-10 relative overflow-hidden h-full">
+                        <div class="absolute -right-10 -top-10 text-[150px] text-white/5 pointer-events-none"><i class="fa-solid fa-paper-plane"></i></div>
+                        <h3 class="font-bold text-2xl mb-6 text-white relative z-10">Send a Message</h3>
+                        <form onsubmit="submitEnq(event)" class="space-y-5 relative z-10">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Your Name</label>
+                                <input type="text" id="enq-name" required class="modern-input">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Email Address</label>
+                                <input type="email" id="enq-email" required class="modern-input">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Message / Enquiry</label>
+                                <textarea id="enq-msg" required rows="5" class="modern-input resize-none"></textarea>
+                            </div>
+                            <button type="submit" id="btn-enq" class="w-full bg-rose-600 hover:bg-rose-500 py-4 rounded-xl font-bold text-white transition shadow-lg mt-2">Submit Ticket</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -167,17 +224,17 @@
                 
                 <div class="bento-card p-6 flex flex-col h-[500px] lg:h-[516px]">
                     <h3 class="font-bold text-xl mb-6 text-white border-b border-white/10 pb-4">Command Terminal</h3>
-                    <select id="search-bg" class="modern-input mb-4 text-sm font-bold">
+                    <select id="search-bg" class="modern-input mb-4 text-sm">
                         <option value="">Select Blood Group...</option>
                         <option value="A+">A+</option><option value="O+">O+</option><option value="B+">B+</option><option value="AB+">AB+</option>
                         <option value="A-">A-</option><option value="O-">O-</option><option value="B-">B-</option><option value="AB-">AB-</option>
                     </select>
                     <div class="grid grid-cols-2 gap-3 mb-6">
-                        <button onclick="searchDonors()" id="btn-scan" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl font-bold text-sm transition shadow">Scan Local</button>
+                        <button onclick="searchDonors()" id="btn-scan" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl font-bold text-sm transition">Scan Local</button>
                         <button onclick="triggerEmergency()" id="btn-alert" class="bg-rose-600 hover:bg-rose-500 text-white p-3 rounded-xl font-bold text-sm transition shadow-[0_0_15px_rgba(225,29,72,0.3)]">Broadcast Alert</button>
                     </div>
                     <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Live Feed</h4>
-                    <div id="donor-results" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar border border-white/5 p-3 rounded-xl bg-black/30">
+                    <div id="donor-results" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                         <div class="flex items-center justify-center h-full text-gray-500 text-sm font-medium flex-col gap-2">
                             <i class="fa-solid fa-satellite-dish text-2xl mb-2 opacity-50"></i>
                             Awaiting scan command...
@@ -191,46 +248,46 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 <div class="lg:col-span-4 bento-card p-6 lg:p-8">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-solid fa-user"></i></div>
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg"><i class="fa-solid fa-user"></i></div>
                         <div>
-                            <h2 id="dash-name" class="font-bold text-2xl text-white leading-tight">My Profile</h2>
+                            <h2 id="dash-name" class="font-bold text-xl text-white leading-tight">Profile</h2>
                             <span id="dash-badge" class="hidden mt-1 inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/20 uppercase"><i class="fa-solid fa-certificate"></i> Verified</span>
                         </div>
                     </div>
                     
                     <form id="profile-form" class="space-y-4">
                         <div>
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Full Name</label>
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Full Name</label>
                             <input type="text" id="prof-name" class="modern-input text-sm">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Blood Type</label>
-                            <select id="prof-bg" class="modern-input text-sm font-bold">
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Blood Type</label>
+                            <select id="prof-bg" class="modern-input text-sm">
                                 <option value="A+">A+</option><option value="O+">O+</option><option value="B+">B+</option><option value="AB+">AB+</option>
                                 <option value="A-">A-</option><option value="O-">O-</option><option value="B-">B-</option><option value="AB-">AB-</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Location (Lat, Lon)</label>
-                            <div class="flex gap-2 mb-3">
-                                <input type="text" id="prof-lat" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lat">
-                                <input type="text" id="prof-lon" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lon">
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Geolocation (Lat, Lon)</label>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="prof-lat" class="modern-input text-sm opacity-50 pointer-events-none">
+                                <input type="text" id="prof-lon" class="modern-input text-sm opacity-50 pointer-events-none">
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <button type="button" onclick="getLocation('prof')" class="bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-2.5 rounded-lg transition border border-white/5"><i class="fa-solid fa-location-crosshairs mr-1"></i> Auto GPS</button>
                                 <button type="button" onclick="openMapPicker('prof')" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-xs font-bold py-2.5 rounded-lg transition border border-blue-500/20"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin on Map</button>
                             </div>
                         </div>
-                        <div class="pt-2 border-t border-white/5">
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Identity Verification</label>
-                            <input type="file" id="prof-doc" class="w-full text-xs text-gray-400 file:bg-white file:text-black file:border-0 file:font-bold file:rounded-lg file:px-4 file:py-2 file:mr-3 cursor-pointer hover:file:bg-gray-200 transition">
+                        <div class="pt-2 border-t border-white/5 mt-4">
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block mt-2">Identity Verification</label>
+                            <input type="file" id="prof-doc" class="w-full text-xs text-gray-400 file:bg-white file:text-black file:border-0 file:font-bold file:rounded-lg file:px-4 file:py-2 file:mr-3 cursor-pointer">
                         </div>
-                        <label class="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition shadow-inner">
+                        <label class="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer mt-4 hover:bg-white/10 transition">
                             <input type="checkbox" id="prof-avail" checked class="w-5 h-5 accent-rose-500 rounded bg-gray-800">
                             <div class="flex flex-col"><span class="text-sm font-bold text-white">Active Donor</span><span class="text-xs text-gray-400">Available for emergencies</span></div>
                         </label>
-                        <button type="button" onclick="saveProfile()" id="btn-save-prof" class="w-full bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold transition mt-2 shadow-lg text-sm">Save Configuration</button>
+                        <button type="button" onclick="saveProfile()" id="btn-save-prof" class="w-full bg-white text-black hover:bg-gray-200 py-3 rounded-xl font-bold transition mt-4">Save Configuration</button>
                     </form>
                 </div>
 
@@ -263,20 +320,20 @@
                     </div>
                     
                     <div class="bento-card p-6 min-h-[250px]">
-                        <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3"><i class="fa-solid fa-clock-rotate-left text-rose-500 mr-2"></i>Activity Log</h3>
+                        <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3">Activity Log</h3>
                         <div id="dash-lists" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
                     </div>
 
-                    <div class="bento-card p-6 lg:p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden shadow-2xl">
-                        <div class="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[#d4af37]/10 to-transparent pointer-events-none"></div>
+                    <div class="bento-card p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-[#d4af37]/10 to-transparent pointer-events-none"></div>
                         <div class="absolute -right-10 -bottom-10 text-[#d4af37]/5 text-[150px] pointer-events-none transform rotate-12"><i class="fa-solid fa-crown"></i></div>
                         <div class="relative z-10 max-w-lg">
                             <span class="bg-[#d4af37]/20 text-[#d4af37] text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest mb-3 inline-block border border-[#d4af37]/30">Premium Feature</span>
-                            <h3 class="font-bold text-2xl text-white mb-2"><i class="fa-solid fa-bolt mr-2"></i>Priority Signal Boost</h3>
+                            <h3 class="font-bold text-2xl text-white mb-2">Priority Signal Boost</h3>
                             <p class="text-sm text-gray-400 mb-6 font-medium">Bypass algorithmic routing. Push your request to the top of all active donor feeds in your region for just ₹20.</p>
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48 bg-black/50" placeholder="Request ID">
-                                <button onclick="initiatePayment()" id="btn-pay-boost" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] hover:opacity-90 text-black font-black py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">Pay via Razorpay</button>
+                                <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48" placeholder="Request ID">
+                                <button onclick="initiatePayment()" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] text-black font-bold py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.3)] whitespace-nowrap">Pay via Razorpay</button>
                             </div>
                         </div>
                     </div>
@@ -285,37 +342,37 @@
         </section>
 
         <section id="hospital" class="page-section max-w-7xl mx-auto mt-6">
-            <div class="bento-card p-6 lg:p-10 relative overflow-hidden">
+            <div class="bento-card p-10 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
                 
                 <div class="flex items-center gap-4 mb-10">
-                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-regular fa-hospital"></i></div>
-                    <div><h2 class="font-black text-2xl lg:text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-bold text-xs uppercase tracking-widest mt-1">Inventory Console</p></div>
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg"><i class="fa-regular fa-hospital"></i></div>
+                    <div><h2 class="font-black text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-medium text-sm">Inventory Management Console</p></div>
                 </div>
                 
-                <form id="hosp-profile" class="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6 mb-12 bg-black/40 p-6 rounded-2xl border border-white/5 shadow-inner">
+                <form id="hosp-profile" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 bg-black/40 p-6 rounded-2xl border border-white/5">
                     <div class="col-span-1 md:col-span-4"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Facility Name</label><input type="text" id="hosp-name" class="modern-input"></div>
-                    <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50 bg-black/20"></div>
-                    <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50 bg-black/20"></div>
-                    <div class="col-span-1 md:col-span-1 flex flex-col justify-end gap-2">
-                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-lg font-bold text-xs text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Auto GPS</button>
-                        <button type="button" onclick="openMapPicker('hosp')" class="w-full bg-blue-600/20 hover:bg-blue-600/40 py-2 rounded-lg font-bold text-xs text-blue-400 transition border border-blue-500/20"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin Map</button>
+                    <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50"></div>
+                    <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50"></div>
+                    <div class="col-span-1 md:col-span-1 flex flex-col gap-2 justify-end">
+                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-xl font-bold text-xs text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Auto GPS</button>
+                        <button type="button" onclick="openMapPicker('hosp')" class="w-full bg-blue-600/20 hover:bg-blue-600/40 py-2 rounded-xl font-bold text-xs text-blue-400 transition"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin Map</button>
                     </div>
-                    <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition shadow-lg">Update Facility Details</button></div>
+                    <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition">Update Facility Details</button></div>
                 </form>
 
-                <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3"><i class="fa-solid fa-boxes-stacked text-gray-400 mr-2"></i>Live Blood Units Available</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A+</label><input type="number" id="stk-A+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A-</label><input type="number" id="stk-A-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B+</label><input type="number" id="stk-B+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B-</label><input type="number" id="stk-B-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O+</label><input type="number" id="stk-O+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O-</label><input type="number" id="stk-O-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB+</label><input type="number" id="stk-AB+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB-</label><input type="number" id="stk-AB-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3">Global Stock Synchronization</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A+</label><input type="number" id="stk-A+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A-</label><input type="number" id="stk-A-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B+</label><input type="number" id="stk-B+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B-</label><input type="number" id="stk-B-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O+</label><input type="number" id="stk-O+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O-</label><input type="number" id="stk-O-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB+</label><input type="number" id="stk-AB+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB-</label><input type="number" id="stk-AB-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
                 </div>
-                <button onclick="saveHospitalStock()" id="btn-sync-stk" class="w-full bg-white text-black py-4 rounded-xl font-black text-lg transition hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.2)]">Sync Inventory to Global Network</button>
+                <button onclick="saveHospitalStock()" id="btn-sync-stk" class="w-full bg-white text-black py-4 rounded-xl font-black text-lg transition hover:bg-gray-200">Push Update to Global Registry</button>
             </div>
         </section>
 
@@ -323,7 +380,7 @@
             <div class="bento-card p-6 lg:p-8 max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-white/10 gap-4">
                     <div><h2 class="text-3xl font-black text-amber-500 tracking-tight">Root Access</h2><p class="text-sm text-gray-400 font-medium mt-1">System-wide monitoring & moderation.</p></div>
-                    <button onclick="loadAdmin()" id="btn-adm-sync" class="w-full md:w-auto bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl text-sm font-bold text-white transition flex items-center justify-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Matrix</button>
+                    <button onclick="loadAdmin()" id="btn-adm-sync" class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition flex items-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Data</button>
                 </div>
                 
                 <div class="flex overflow-x-auto gap-2 mb-8 border-b border-white/10 pb-1">
@@ -343,7 +400,6 @@
                                 <div><div id="adm-tot-don" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-green-500 uppercase tracking-wide">Rescues</div></div>
                             </div>
                         </div>
-                        
                         <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col justify-center">
                             <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-500"></i> Global Broadcast Alert</h3>
                             <p class="text-xs text-gray-400 mb-4">Send an instant emergency notification to all currently active users on the network.</p>
@@ -371,7 +427,7 @@
                         <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">User Directory</h3></div>
                         <div class="overflow-x-auto custom-scrollbar max-h-[300px]">
                             <table class="w-full text-sm text-left whitespace-nowrap">
-                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0"><tr><th class="p-4 font-bold tracking-wider">UID</th><th class="p-4 font-bold tracking-wider">Identity</th><th class="p-4 font-bold tracking-wider">Access Level</th><th class="p-4 font-bold tracking-wider">Status</th><th class="p-4 font-bold tracking-wider">Controls</th></tr></thead>
+                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0 backdrop-blur"><tr><th class="p-4 font-bold tracking-wider">UID</th><th class="p-4 font-bold tracking-wider">Identity</th><th class="p-4 font-bold tracking-wider">Access Level</th><th class="p-4 font-bold tracking-wider">Status</th><th class="p-4 font-bold tracking-wider">Controls</th></tr></thead>
                                 <tbody id="adm-users" class="divide-y divide-white/5"></tbody>
                             </table>
                         </div>
@@ -380,7 +436,7 @@
                         <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">Registered Hospitals</h3></div>
                         <div class="overflow-x-auto custom-scrollbar max-h-[300px]">
                             <table class="w-full text-sm text-left whitespace-nowrap">
-                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0"><tr><th class="p-4 font-bold">UID</th><th class="p-4 font-bold">Facility Name</th><th class="p-4 font-bold">Coordinates</th></tr></thead>
+                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0 backdrop-blur"><tr><th class="p-4 font-bold">UID</th><th class="p-4 font-bold">Facility Name</th><th class="p-4 font-bold">Coordinates</th></tr></thead>
                                 <tbody id="adm-hospitals" class="divide-y divide-white/5"></tbody>
                             </table>
                         </div>
@@ -433,6 +489,60 @@
 
     </main>
 
+    <footer class="border-t border-white/5 bg-black/40 mt-10 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+            <div class="md:col-span-1">
+                <div class="text-2xl font-bold text-white flex items-center gap-2 mb-4">
+                    <div class="bg-rose-600 p-1.5 rounded-full text-[10px]"><i class="fa-solid fa-droplet text-white"></i></div> LifeDrop
+                </div>
+                <p class="text-sm text-gray-500 leading-relaxed mb-6">The operating system for humanity. Bridging the gap between emergency blood requirements and verified donors via cutting-edge geospatial tech.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-rose-600 transition"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Platform</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><button onclick="navTo('home')" class="footer-link">About LifeDrop</button></li>
+                    <li><button onclick="navTo('network')" class="footer-link">Live Network Map</button></li>
+                    <li><a href="#" class="footer-link">Hospital Partnerships</a></li>
+                    <li><a href="#" class="footer-link">How AI Routing Works</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Support</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><button onclick="navTo('contact')" class="footer-link text-rose-400 font-medium">Contact & Support</button></li>
+                    <li><a href="#" class="footer-link">Help Center / FAQ</a></li>
+                    <li><a href="#" class="footer-link">Donor Guidelines</a></li>
+                    <li><a href="#" class="footer-link">Verification Process</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Legal</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><a href="#" class="footer-link">Privacy Policy</a></li>
+                    <li><a href="#" class="footer-link">Terms of Service</a></li>
+                    <li><a href="#" class="footer-link">Data Protection</a></li>
+                    <li><a href="#" class="footer-link">Cookie Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-6 border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-xs text-gray-600 font-mono tracking-widest">© 2026 LIFEDROP NETWORK. ALL RIGHTS RESERVED.</p>
+            <div class="flex gap-4 text-xs text-gray-600 font-mono tracking-widest">
+                <span>SYSTEM: ONLINE</span>
+                <span class="text-green-500">● 99.9% UPTIME</span>
+            </div>
+        </div>
+    </footer>
+
     <div id="map-picker-modal" class="cert-modal px-4 z-[9999]">
         <div class="bento-card p-4 md:p-6 max-w-3xl w-full relative border-blue-500/30">
             <button onclick="closeMapPicker()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -451,11 +561,11 @@
             <div class="absolute -right-4 -top-4 text-rose-500/20 text-9xl animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <h3 class="text-2xl font-black text-rose-500 mb-4 relative z-10"><i class="fa-solid fa-tower-broadcast mr-2"></i> EMERGENCY ALERT</h3>
             <p id="broadcast-text" class="text-lg text-white font-medium mb-6 relative z-10 leading-relaxed"></p>
-            <button onclick="document.getElementById('broadcast-modal').classList.remove('active')" class="w-full bg-white text-black py-3 rounded-xl font-bold relative z-10">I Understand</button>
+            <button onclick="document.getElementById('broadcast-modal').classList.remove('active')" class="w-full bg-white text-black py-3 rounded-xl font-bold relative z-10 hover:bg-gray-200 transition">Acknowledge</button>
         </div>
     </div>
 
-    <div id="pay-modal" class="cert-modal px-4">
+    <div id="pay-modal" class="cert-modal px-4 z-[9999]">
         <div class="bento-card p-8 max-w-md w-full relative transform transition-all border-[#d4af37]/30">
             <button onclick="document.getElementById('pay-modal').classList.remove('active')" class="absolute top-5 right-5 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="w-12 h-12 bg-[#d4af37]/10 rounded-full flex items-center justify-center mb-4 border border-[#d4af37]/20"><i class="fa-solid fa-bolt text-[#d4af37] text-xl"></i></div>
@@ -472,7 +582,7 @@
         </div>
     </div>
 
-    <div id="cert-modal" class="cert-modal px-2">
+    <div id="cert-modal" class="cert-modal px-2 z-[9999]">
         <div class="cert-frame max-w-4xl w-full relative text-center shadow-[0_0_60px_rgba(0,0,0,0.8)]">
             <div class="cert-inner bg-[#fdfbf7]">
                 <div class="cert-bg"></div>
@@ -493,7 +603,7 @@
                 </div>
             </div>
             <div class="absolute -bottom-10 w-full left-0 text-center">
-                <p class="text-[10px] md:text-xs text-gray-400 tracking-wider">In partnership with <a href="https://hope-foundation-empowering-children.onrender.com/" target="_blank" class="text-white font-bold hover:underline">Hope Foundation</a></p>
+                <p class="text-[10px] md:text-xs text-gray-400 tracking-wider">In partnership with <a href="https://hope-foundation-empowering-children.onrender.com/" target="_blank" class="text-white font-bold hover:underline">Hope Foundation Empowering Children</a></p>
             </div>
         </div>
     </div>
@@ -747,7 +857,6 @@
                         if(r.profile.lat && r.profile.lon) userCoords = {lat: r.profile.lat, lon: r.profile.lon};
                         document.getElementById('dash-badge').classList.toggle('hidden', !r.profile.is_verified);
                         
-                        // Smart Eligibility Logic
                         const statBox = document.getElementById('eligibility-status');
                         if(r.profile.last_donation_date) {
                             let lastDon = new Date(r.profile.last_donation_date);
@@ -843,6 +952,14 @@
             showToast(r.message, r.success?'success':'error'); if(r.success) document.getElementById('pay-modal').classList.remove('active');
         }
 
+        // Enquiries
+        async function submitEnq(e) {
+            e.preventDefault(); setLoading('btn-enq', true, 'Submit');
+            const r = await api('/enquiry', 'POST', {name: document.getElementById('enq-name').value, email: document.getElementById('enq-email').value, message: document.getElementById('enq-msg').value});
+            setLoading('btn-enq', false, 'Submit Ticket');
+            if(r.success) { showToast("Received. Our team will ping you.", 'success'); e.target.reset(); } else showToast('Error sending', 'error');
+        }
+
         // Power Admin
         async function loadAdmin() {
             setLoading('btn-adm-sync', true, '<span class="spinner"></span>');
@@ -858,7 +975,7 @@
                 
                 document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="flex gap-2"><a href="/uploads/${p.screenshot_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect Ledger</a><button onclick="adminAction('approve_payment', ${p.id})" class="flex-1 bg-[#d4af37] text-black py-2.5 rounded-lg text-xs font-bold hover:bg-[#c5a028] transition">Verify Boost</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
-                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.email}</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
+                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.name} (${e.email})</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
             }
         }
 
