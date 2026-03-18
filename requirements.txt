@@ -8,3 +8,5 @@ gevent==24.2.1
 gevent-websocket==0.10.1
 gunicorn==21.2.0
 razorpay==1.4.1
+reportlab==4.1.0
+twilio==9.0.0
