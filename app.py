@@ -55,12 +55,11 @@ def init_db():
         CREATE TABLE IF NOT EXISTS donations (id SERIAL PRIMARY KEY, donor_id INTEGER, request_id INTEGER, status TEXT DEFAULT 'accepted', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE, FOREIGN KEY(request_id) REFERENCES requests(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, donor_id INTEGER, rating INTEGER, comment TEXT, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS enquiries (id SERIAL PRIMARY KEY, name TEXT, email TEXT, message TEXT, status TEXT DEFAULT 'open', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, screenshot_path TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, razorpay_order_id TEXT, razorpay_payment_id TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
         CREATE INDEX IF NOT EXISTS idx_blood_group ON donors(blood_group);
         CREATE INDEX IF NOT EXISTS idx_request_location ON requests(lat, lon);
     ''')
     
-    # AUTO-FIX FOR DB: Dynamically add missing columns if table already exists
     try:
         cursor.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_order_id TEXT;")
         cursor.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT;")
@@ -83,6 +82,13 @@ def serve_index(): return send_from_directory('.', 'index.html')
 
 @app.route('/favicon.ico')
 def favicon(): return '', 204
+
+# NEW: Serve uploaded profile images directly from root directory
+@app.route('/<filename>')
+def serve_root_images(filename):
+    if filename.endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        return send_from_directory('.', filename)
+    return "Not found", 404
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
