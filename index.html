@@ -221,7 +221,22 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-32 max-w-7xl mx-auto">
+            <div class="mt-16 bg-black/40 border border-white/10 rounded-3xl p-8 max-w-4xl mx-auto shadow-2xl backdrop-blur-md">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">Quick Action: I need to...</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <button onclick="navTo('network')" class="flex flex-col items-center justify-center p-6 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/30 rounded-2xl transition group">
+                        <i class="fa-solid fa-hand-holding-droplet text-4xl text-rose-500 mb-4 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-white font-bold text-lg">Request Blood</span>
+                        <span class="text-xs text-gray-400 mt-2 text-center">Find verified donors near you instantly</span>
+                    </button>
+                    <button onclick="navTo('auth')" class="flex flex-col items-center justify-center p-6 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 rounded-2xl transition group">
+                        <i class="fa-solid fa-heart-pulse text-4xl text-green-500 mb-4 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-white font-bold text-lg">Donate Blood</span>
+                        <span class="text-xs text-gray-400 mt-2 text-center">Register profile and save a life today</span>
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-7xl mx-auto">
                 <div class="bento-card p-8 md:col-span-2 flex flex-col justify-end min-h-[300px] relative overflow-hidden group">
                     <div class="absolute top-0 right-0 p-6 text-6xl text-rose-500/20 group-hover:scale-110 transition"><i class="fa-solid fa-microchip"></i></div>
                     <h3 class="font-bold text-2xl mb-2 text-white relative z-10">Algorithmic Dispatch</h3>
