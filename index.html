@@ -11,7 +11,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=visualization"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <link rel="manifest" href="/manifest.json">
@@ -40,7 +43,9 @@
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
 
-        #map-container { height: 500px; width: 100%; border-radius: 24px; }
+        #map-container { height: 500px; width: 100%; border-radius: 24px; z-index: 10; }
+        #picker-map-canvas { z-index: 10; }
+
         #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 16px; display: flex; align-items: flex-start; gap: 12px; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
@@ -54,19 +59,26 @@
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 60; backdrop-filter: blur(15px); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
 
-        /* Admin Tabs */
         .admin-tab { cursor: pointer; padding: 10px 20px; border-bottom: 2px solid transparent; transition: all 0.3s; font-weight: bold; color: gray; }
         .admin-tab.active { border-bottom: 2px solid #f59e0b; color: white; }
         .admin-panel { display: none; }
         .admin-panel.active { display: block; animation: fadeUp 0.4s ease forwards; }
 
-        /* Auth Tabs */
         .auth-panel { display: none; animation: fadeUp 0.4s forwards; }
         .auth-panel.active { display: block; }
         
-        /* Footer Links Hover */
-        .footer-link { transition: color 0.3s ease; }
+        .footer-link { transition: color 0.3s ease; text-align: left; background: none; border: none; cursor: pointer; padding: 0; font: inherit; }
         .footer-link:hover { color: var(--accent); }
+        
+        .leaflet-container { background: #111 !important; outline: none; }
+        .leaflet-control-attribution { background: rgba(0,0,0,0.5) !important; color: #888 !important; }
+        .leaflet-control-attribution a { color: #aaa !important; }
+
+        /* Document/Text Page Styling */
+        .doc-content h2 { font-size: 1.5rem; font-weight: bold; color: white; margin-top: 2rem; margin-bottom: 1rem; }
+        .doc-content p { margin-bottom: 1rem; color: #9ca3af; line-height: 1.7; }
+        .doc-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; color: #9ca3af; }
+        .doc-content li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative" onload="initApp()">
@@ -78,25 +90,21 @@
 
     <nav class="bento-card sticky top-4 xl:top-6 z-50 mx-4 xl:mx-auto max-w-7xl px-5 xl:px-8 py-3 flex justify-between items-center rounded-2xl xl:rounded-full shadow-xl">
         <div class="text-xl font-bold text-white flex items-center gap-3 cursor-pointer shrink-0" onclick="navTo('home')">
-            <div class="bg-rose-600 p-2.5 rounded-full text-xs shadow-lg"><i class="fa-solid fa-droplet text-white"></i></div>
-            <span class="tracking-tight">LifeDrop</span>
+            <div class="bg-rose-600 p-2.5 rounded-full text-xs shadow-lg"><i class="fa-solid fa-droplet text-white"></i></div> LifeDrop
         </div>
-        
         <div class="hidden xl:flex gap-6 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
             <button onclick="navTo('home')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Platform</button>
             <button onclick="navTo('network')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Network Map</button>
             <button onclick="navTo('dashboard')" id="nav-dashboard" class="hidden hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Dashboard</button>
             <button onclick="navTo('hospital')" id="nav-hospital" class="hidden text-blue-400 font-bold transition px-2 py-1 rounded hover:bg-blue-400/10">Hospital OS</button>
-            <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin</button>
+            <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin Center</button>
             <button onclick="navTo('contact')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Support</button>
         </div>
-
         <div class="hidden xl:flex gap-4 items-center shrink-0">
             <button id="install-btn" class="hidden text-xs bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-full font-medium transition border border-white/10"><i class="fa-brands fa-windows mr-1"></i> Get App</button>
             <button onclick="navTo('auth')" id="nav-login" class="bg-white text-black hover:bg-gray-200 px-7 py-2.5 rounded-full font-bold text-sm transition shadow-lg">Sign In</button>
             <button onclick="logout()" id="nav-logout" class="hidden bg-transparent hover:bg-rose-500/10 text-rose-500 px-7 py-2.5 rounded-full font-bold text-sm transition border border-rose-500/30">Sign Out</button>
         </div>
-
         <button class="xl:hidden text-white p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/10" onclick="toggleMobileMenu()">
             <i class="fa-solid fa-bars text-xl px-1"></i>
         </button>
@@ -138,7 +146,7 @@
                 
                 <div class="flex-1 relative animate-float w-full max-w-lg mt-10 xl:mt-0">
                     <div class="absolute inset-0 bg-rose-500 blur-[80px] opacity-20 rounded-full"></div>
-                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="A medical professional holding a blood bag representing our digital blood donation network" class="relative z-10 rounded-3xl border border-gray-800 shadow-2xl object-cover h-[350px] xl:h-[450px] w-full">
+                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="Medical professional holding a blood bag" class="relative z-10 rounded-3xl border border-gray-800 shadow-2xl object-cover h-[350px] xl:h-[450px] w-full">
                 </div>
             </div>
 
@@ -219,7 +227,7 @@
                         <span class="text-xs font-bold text-white tracking-widest uppercase">Live Tracking</span>
                     </div>
                     <button onclick="toggleHeatmap()" class="absolute top-6 right-6 z-10 bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 text-xs font-bold hover:bg-white/10 transition shadow-lg"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> Heatmap</button>
-                    <div id="map-container" class="h-full min-h-[300px] lg:min-h-[500px]">Map Loading... (API Key Required)</div>
+                    <div id="map-container" class="h-full min-h-[300px] lg:min-h-[500px]">Loading OpenStreetMap...</div>
                 </div>
                 
                 <div class="bento-card p-6 flex flex-col h-[500px] lg:h-[516px]">
@@ -246,7 +254,6 @@
 
         <section id="dashboard" class="page-section max-w-7xl mx-auto mt-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
                 <div class="lg:col-span-4 bento-card p-6 lg:p-8">
                     <div class="flex items-center gap-4 mb-8">
                         <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg"><i class="fa-solid fa-user"></i></div>
@@ -255,7 +262,6 @@
                             <span id="dash-badge" class="hidden mt-1 inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/20 uppercase"><i class="fa-solid fa-certificate"></i> Verified</span>
                         </div>
                     </div>
-                    
                     <form id="profile-form" class="space-y-4">
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Full Name</label>
@@ -324,7 +330,7 @@
                         <div id="dash-lists" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
                     </div>
 
-                    <div class="bento-card p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden">
+                    <div class="bento-card p-6 lg:p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden shadow-2xl">
                         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-[#d4af37]/10 to-transparent pointer-events-none"></div>
                         <div class="absolute -right-10 -bottom-10 text-[#d4af37]/5 text-[150px] pointer-events-none transform rotate-12"><i class="fa-solid fa-crown"></i></div>
                         <div class="relative z-10 max-w-lg">
@@ -332,8 +338,8 @@
                             <h3 class="font-bold text-2xl text-white mb-2">Priority Signal Boost</h3>
                             <p class="text-sm text-gray-400 mb-6 font-medium">Bypass algorithmic routing. Push your request to the top of all active donor feeds in your region for just ₹20.</p>
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48" placeholder="Request ID">
-                                <button onclick="initiatePayment()" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] text-black font-bold py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.3)] whitespace-nowrap">Pay via Razorpay</button>
+                                <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48 bg-black/50" placeholder="Request ID">
+                                <button onclick="initiatePayment()" id="btn-pay-boost" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] hover:opacity-90 text-black font-black py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">Pay via Razorpay</button>
                             </div>
                         </div>
                     </div>
@@ -342,37 +348,36 @@
         </section>
 
         <section id="hospital" class="page-section max-w-7xl mx-auto mt-6">
-            <div class="bento-card p-10 relative overflow-hidden">
+            <div class="bento-card p-6 lg:p-10 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-                
                 <div class="flex items-center gap-4 mb-10">
-                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg"><i class="fa-regular fa-hospital"></i></div>
-                    <div><h2 class="font-black text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-medium text-sm">Inventory Management Console</p></div>
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-regular fa-hospital"></i></div>
+                    <div><h2 class="font-black text-2xl lg:text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-bold text-xs uppercase tracking-widest mt-1">Inventory Console</p></div>
                 </div>
                 
-                <form id="hosp-profile" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 bg-black/40 p-6 rounded-2xl border border-white/5">
+                <form id="hosp-profile" class="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6 mb-12 bg-black/40 p-6 rounded-2xl border border-white/5 shadow-inner">
                     <div class="col-span-1 md:col-span-4"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Facility Name</label><input type="text" id="hosp-name" class="modern-input"></div>
-                    <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50"></div>
-                    <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50"></div>
+                    <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50 bg-black/20"></div>
+                    <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50 bg-black/20"></div>
                     <div class="col-span-1 md:col-span-1 flex flex-col gap-2 justify-end">
-                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-xl font-bold text-xs text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Auto GPS</button>
-                        <button type="button" onclick="openMapPicker('hosp')" class="w-full bg-blue-600/20 hover:bg-blue-600/40 py-2 rounded-xl font-bold text-xs text-blue-400 transition"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin Map</button>
+                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-lg font-bold text-xs text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Auto GPS</button>
+                        <button type="button" onclick="openMapPicker('hosp')" class="w-full bg-blue-600/20 hover:bg-blue-600/40 py-2 rounded-lg font-bold text-xs text-blue-400 transition border border-blue-500/20"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin Map</button>
                     </div>
-                    <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition">Update Facility Details</button></div>
+                    <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition shadow-lg">Update Facility Details</button></div>
                 </form>
 
                 <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3">Global Stock Synchronization</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A+</label><input type="number" id="stk-A+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A-</label><input type="number" id="stk-A-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B+</label><input type="number" id="stk-B+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B-</label><input type="number" id="stk-B-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O+</label><input type="number" id="stk-O+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O-</label><input type="number" id="stk-O-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB+</label><input type="number" id="stk-AB+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
-                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB-</label><input type="number" id="stk-AB-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-bold text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A+</label><input type="number" id="stk-A+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A-</label><input type="number" id="stk-A-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B+</label><input type="number" id="stk-B+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B-</label><input type="number" id="stk-B-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O+</label><input type="number" id="stk-O+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O-</label><input type="number" id="stk-O-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB+</label><input type="number" id="stk-AB+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB-</label><input type="number" id="stk-AB-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
                 </div>
-                <button onclick="saveHospitalStock()" id="btn-sync-stk" class="w-full bg-white text-black py-4 rounded-xl font-black text-lg transition hover:bg-gray-200">Push Update to Global Registry</button>
+                <button onclick="saveHospitalStock()" id="btn-sync-stk" class="w-full bg-white text-black py-4 rounded-xl font-black text-lg transition hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.2)]">Sync Inventory to Global Network</button>
             </div>
         </section>
 
@@ -380,10 +385,10 @@
             <div class="bento-card p-6 lg:p-8 max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-white/10 gap-4">
                     <div><h2 class="text-3xl font-black text-amber-500 tracking-tight">Root Access</h2><p class="text-sm text-gray-400 font-medium mt-1">System-wide monitoring & moderation.</p></div>
-                    <button onclick="loadAdmin()" id="btn-adm-sync" class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition flex items-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Data</button>
+                    <button onclick="loadAdmin()" id="btn-adm-sync" class="w-full md:w-auto bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl text-sm font-bold text-white transition flex items-center justify-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Matrix</button>
                 </div>
                 
-                <div class="flex overflow-x-auto gap-2 mb-8 border-b border-white/10 pb-1">
+                <div class="flex overflow-x-auto gap-2 mb-8 border-b border-white/10 pb-1 custom-scrollbar">
                     <button class="admin-tab active" onclick="switchAdminTab('adm-overview', this)">Overview</button>
                     <button class="admin-tab" onclick="switchAdminTab('adm-users-tab', this)">Users & Hospitals</button>
                     <button class="admin-tab" onclick="switchAdminTab('adm-actions-tab', this)">KYC & Boosts</button>
@@ -487,6 +492,92 @@
             </div>
         </section>
 
+        <section id="hospital-partners" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">Hospital Partnerships</h1>
+                <p>LifeDrop partners with leading medical facilities to ensure that blood inventory data is synchronized globally. By integrating our OS, hospitals can bypass traditional phone-trees and directly ping verified donors in their vicinity.</p>
+                <h2>Benefits of Partnering</h2>
+                <ul>
+                    <li>Real-time inventory synchronization across the network.</li>
+                    <li>Direct access to our algorithmic dispatch system.</li>
+                    <li>Reduced emergency wait times by up to 70%.</li>
+                    <li>Dedicated enterprise support and API access.</li>
+                </ul>
+                <p>To integrate your facility, please use the <button onclick="navTo('contact')" class="text-rose-500 font-bold hover:underline">Contact Form</button> and select "Enterprise Access".</p>
+            </div>
+        </section>
+
+        <section id="ai-routing" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">How AI Routing Works</h1>
+                <p>Our routing algorithm is designed to eliminate the "bystander effect" caused by mass email or SMS blasts. When an emergency is triggered, the system calculates a unique <strong>Priority Score</strong> for every active donor in the network.</p>
+                <h2>The Algorithm</h2>
+                <p>The score is determined in real-time using the following metrics:</p>
+                <ul>
+                    <li><strong>Geospatial Proximity:</strong> Calculated using the Haversine formula. Closer donors receive exponentially higher scores.</li>
+                    <li><strong>Trust & Reliability:</strong> Donors who have successfully completed donations in the past gain a higher base trust score.</li>
+                    <li><strong>Cooldown Status:</strong> The system automatically filters out any donor who has donated within the last 90 days.</li>
+                    <li><strong>KYC Verification:</strong> Verified donors (Aadhaar/DL checked) are prioritized in the queue.</li>
+                </ul>
+                <p>Once scored, the top 3 matches are pinged via WebSockets for instant, zero-latency notification.</p>
+            </div>
+        </section>
+
+        <section id="faq" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">Help Center / FAQ</h1>
+                <h2>I requested blood, but no one accepted. What now?</h2>
+                <p>If local donors are unavailable, you can use the <strong>Priority Signal Boost</strong> feature in your dashboard. For ₹20, your request bypasses local routing and is broadcasted to the entire regional network.</p>
+                <h2>How do I verify my identity?</h2>
+                <p>In your Dashboard profile settings, upload a clear picture of your Aadhaar Card or Driving License. Our admins review the KYC queue daily. Once approved, you will receive a "Verified" badge.</p>
+                <h2>Why am I locked out from donating?</h2>
+                <p>For your health and safety, LifeDrop enforces a strict 90-day cooldown period after a successful donation. You will be automatically unlocked once the cooldown period expires.</p>
+            </div>
+        </section>
+
+        <section id="donor-guidelines" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">Donor Guidelines</h1>
+                <p>Donating blood is a noble act, but it must be done safely. Please ensure you meet the following criteria before marking yourself as "Active" on the network.</p>
+                <h2>Basic Requirements</h2>
+                <ul>
+                    <li>You must be between 18 and 65 years of age.</li>
+                    <li>Your weight should not be less than 45 kilograms.</li>
+                    <li>Your hemoglobin count should not be less than 12.5 g/dl.</li>
+                    <li>You must not have donated blood in the last 90 days (3 months).</li>
+                    <li>You should be in good health and not suffering from cold, flu, or other infections.</li>
+                </ul>
+                <p>If you are pregnant, nursing, or have undergone major surgery recently, please refrain from donating.</p>
+            </div>
+        </section>
+
+        <section id="privacy" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">Privacy & Data Protection</h1>
+                <p>Your privacy is critical to our mission. LifeDrop handles highly sensitive medical and locational data, and we employ strict security measures to protect it.</p>
+                <h2>Data Collection</h2>
+                <p>We collect your exact GPS coordinates solely for the purpose of the algorithmic matching system. Your location is never sold to third parties.</p>
+                <h2>KYC Documents</h2>
+                <p>Identity documents uploaded for verification are stored securely in our private buckets. They are reviewed by authorized admins and are not publicly accessible.</p>
+                <h2>Cookie Policy</h2>
+                <p>We use essential cookies and local storage (JWT tokens) to maintain your secure session. We do not use tracking cookies for advertisements.</p>
+            </div>
+        </section>
+
+        <section id="terms" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 md:p-12 doc-content">
+                <h1 class="text-4xl font-black text-white mb-6">Terms of Service</h1>
+                <p>By accessing the LifeDrop platform, you agree to abide by these terms of service.</p>
+                <h2>Platform Usage</h2>
+                <ul>
+                    <li>You agree to provide accurate medical and location information.</li>
+                    <li>False emergency requests will result in an immediate and permanent ban from the network.</li>
+                    <li>The "Priority Boost" payment is non-refundable, as it instantly utilizes server resources to broadcast your signal.</li>
+                </ul>
+                <p>LifeDrop acts as a facilitator between donors and recipients. We are not a medical institution and cannot be held liable for medical complications arising during the donation process.</p>
+            </div>
+        </section>
+
     </main>
 
     <footer class="border-t border-white/5 bg-black/40 mt-10 pt-16 pb-8 relative z-10">
@@ -505,31 +596,29 @@
             
             <div>
                 <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Platform</h4>
-                <ul class="space-y-3 text-sm text-gray-400">
+                <ul class="space-y-3 text-sm text-gray-400 flex flex-col items-start">
                     <li><button onclick="navTo('home')" class="footer-link">About LifeDrop</button></li>
                     <li><button onclick="navTo('network')" class="footer-link">Live Network Map</button></li>
-                    <li><a href="#" class="footer-link">Hospital Partnerships</a></li>
-                    <li><a href="#" class="footer-link">How AI Routing Works</a></li>
+                    <li><button onclick="navTo('hospital-partners')" class="footer-link">Hospital Partnerships</button></li>
+                    <li><button onclick="navTo('ai-routing')" class="footer-link">How AI Routing Works</button></li>
                 </ul>
             </div>
             
             <div>
                 <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Support</h4>
-                <ul class="space-y-3 text-sm text-gray-400">
+                <ul class="space-y-3 text-sm text-gray-400 flex flex-col items-start">
                     <li><button onclick="navTo('contact')" class="footer-link text-rose-400 font-medium">Contact & Support</button></li>
-                    <li><a href="#" class="footer-link">Help Center / FAQ</a></li>
-                    <li><a href="#" class="footer-link">Donor Guidelines</a></li>
-                    <li><a href="#" class="footer-link">Verification Process</a></li>
+                    <li><button onclick="navTo('faq')" class="footer-link">Help Center / FAQ</button></li>
+                    <li><button onclick="navTo('donor-guidelines')" class="footer-link">Donor Guidelines</button></li>
                 </ul>
             </div>
             
             <div>
                 <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Legal</h4>
-                <ul class="space-y-3 text-sm text-gray-400">
-                    <li><a href="#" class="footer-link">Privacy Policy</a></li>
-                    <li><a href="#" class="footer-link">Terms of Service</a></li>
-                    <li><a href="#" class="footer-link">Data Protection</a></li>
-                    <li><a href="#" class="footer-link">Cookie Policy</a></li>
+                <ul class="space-y-3 text-sm text-gray-400 flex flex-col items-start">
+                    <li><button onclick="navTo('privacy')" class="footer-link">Privacy Policy</button></li>
+                    <li><button onclick="navTo('terms')" class="footer-link">Terms of Service</button></li>
+                    <li><button onclick="navTo('privacy')" class="footer-link">Data Protection & Cookies</button></li>
                 </ul>
             </div>
         </div>
@@ -545,11 +634,11 @@
 
     <div id="map-picker-modal" class="cert-modal px-4 z-[9999]">
         <div class="bento-card p-4 md:p-6 max-w-3xl w-full relative border-blue-500/30">
-            <button onclick="closeMapPicker()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            <button onclick="closeMapPicker()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition z-[1000]"><i class="fa-solid fa-xmark text-2xl"></i></button>
             <h3 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-map-location-dot text-blue-400 mr-2"></i>Pin Your Location</h3>
             <p class="text-sm text-gray-400 mb-4">Click anywhere on the map to set your exact facility or home location.</p>
-            <div id="picker-map-canvas" class="w-full h-[300px] md:h-[400px] rounded-xl bg-black border border-white/10 mb-5 relative overflow-hidden"></div>
-            <div class="flex justify-end gap-3 mt-4">
+            <div id="picker-map-canvas" class="w-full h-[300px] md:h-[400px] rounded-xl bg-gray-900 border border-white/10 mb-5 relative overflow-hidden z-10"></div>
+            <div class="flex justify-end gap-3 mt-4 relative z-20">
                 <button onclick="closeMapPicker()" class="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition">Cancel</button>
                 <button onclick="confirmPinnedLocation()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition shadow-[0_0_15px_rgba(59,130,246,0.4)]">Confirm Coordinates</button>
             </div>
@@ -610,7 +699,7 @@
 
     <script>
         const API = "/api";
-        let userCoords = null, socket = null, map = null, heatmap = null, markers = [];
+        let userCoords = null, socket = null, map = null, heatmap = null, markers = [], layerGroup = null;
 
         // Auth Tabs Logic
         function switchAuthTab(tab) {
@@ -687,12 +776,14 @@
 
         function checkAuth() {
             const t = localStorage.getItem('token'), r = localStorage.getItem('role');
+            // Desktop Nav
             document.getElementById('nav-login').classList.toggle('hidden', !!t);
             document.getElementById('nav-logout').classList.toggle('hidden', !t);
             document.getElementById('nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
             document.getElementById('nav-hospital').classList.toggle('hidden', r!=='hospital');
             document.getElementById('nav-admin').classList.toggle('hidden', r!=='admin');
             
+            // Mobile Nav
             document.getElementById('mob-nav-login').classList.toggle('hidden', !!t);
             document.getElementById('mob-nav-logout').classList.toggle('hidden', !t);
             document.getElementById('mob-nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
@@ -712,7 +803,7 @@
             
             if(sec==='dashboard' || sec==='hospital') loadDash(); 
             if(sec==='admin') loadAdmin(); 
-            if(sec==='network' && !map && typeof google!=='undefined' && google.maps) initMap();
+            if(sec==='network' && !map) initMap();
         }
 
         // WebSockets
@@ -769,33 +860,38 @@
         }
         function logout() { localStorage.clear(); if(socket) {socket.disconnect(); socket=null;} checkAuth(); navTo('home'); showToast('Session terminated','info');}
 
-        // Map Picker
+        // 100% FREE MAP PICKER (LEAFLET)
         let pickerMap, pickerMarker, pickerContext;
         function openMapPicker(ctx) {
             pickerContext = ctx;
             document.getElementById('map-picker-modal').classList.add('active');
             setTimeout(() => {
-                if(typeof google === 'undefined' || !google.maps) {
-                    document.getElementById('picker-map-canvas').innerHTML = "<div class='flex items-center justify-center h-full text-rose-500 text-sm font-bold bg-gray-900 rounded-xl'>Google Maps API Key Missing. Add it in index.html to enable this feature.</div>";
-                    return;
-                }
                 if(!pickerMap) {
-                    pickerMap = new google.maps.Map(document.getElementById("picker-map-canvas"), {
-                        center: userCoords ? {lat: parseFloat(userCoords.lat), lng: parseFloat(userCoords.lon)} : {lat: 26.4499, lng: 80.3319}, 
-                        zoom: 13, 
-                        styles: [{elementType:"geometry",stylers:[{color:"#111111"}]},{elementType:"labels.text.stroke",stylers:[{color:"#111111"}]},{elementType:"labels.text.fill",stylers:[{color:"#666666"}]},{featureType:"water",stylers:[{color:"#050505"}]},{featureType:"road",stylers:[{color:"#222222"}]}],
-                        disableDefaultUI: true 
+                    const startLat = userCoords ? parseFloat(userCoords.lat) : 26.4499;
+                    const startLon = userCoords ? parseFloat(userCoords.lon) : 80.3319;
+                    
+                    pickerMap = L.map('picker-map-canvas').setView([startLat, startLon], 13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; OpenStreetMap & CartoDB'
+                    }).addTo(pickerMap);
+                    
+                    pickerMap.on('click', function(e) {
+                        if(pickerMarker) pickerMap.removeLayer(pickerMarker);
+                        pickerMarker = L.marker(e.latlng).addTo(pickerMap);
                     });
-                    pickerMap.addListener("click", (e) => {
-                        if(pickerMarker) pickerMarker.setMap(null);
-                        pickerMarker = new google.maps.Marker({ position: e.latLng, map: pickerMap, animation: google.maps.Animation.DROP, icon: {path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#3b82f6", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff"} });
-                    });
-                } else if (userCoords) { pickerMap.setCenter({lat: parseFloat(userCoords.lat), lng: parseFloat(userCoords.lon)}); }
-            }, 100);
+                    
+                    if(userCoords) {
+                        pickerMarker = L.marker([startLat, startLon]).addTo(pickerMap);
+                    }
+                } else if (userCoords) { 
+                    pickerMap.setView([parseFloat(userCoords.lat), parseFloat(userCoords.lon)], 13); 
+                }
+                pickerMap.invalidateSize();
+            }, 300);
         }
         function confirmPinnedLocation() {
             if(!pickerMarker) return showToast("Click on the map to drop a pin.", "error");
-            userCoords = { lat: pickerMarker.getPosition().lat(), lon: pickerMarker.getPosition().lng() };
+            userCoords = { lat: pickerMarker.getLatLng().lat, lon: pickerMarker.getLatLng().lng };
             document.getElementById(pickerContext + '-lat').value = userCoords.lat.toFixed(6); document.getElementById(pickerContext + '-lon').value = userCoords.lon.toFixed(6);
             closeMapPicker(); showToast("Location pinned!", "success");
         }
@@ -884,23 +980,34 @@
 
         function showCert(name) { document.getElementById('cert-name').innerText = name; document.getElementById('cert-modal').classList.add('active'); }
 
-        // Maps & AI Search
+        // 100% FREE MAPS (LEAFLET.JS)
         function initMap() {
-            try {
-                map = new google.maps.Map(document.getElementById("map-container"), { center: {lat: 26.4499, lng: 80.3319}, zoom: 12, styles: [{elementType:"geometry",stylers:[{color:"#111111"}]},{elementType:"labels.text.stroke",stylers:[{color:"#111111"}]},{elementType:"labels.text.fill",stylers:[{color:"#666666"}]},{featureType:"water",stylers:[{color:"#050505"}]},{featureType:"road",stylers:[{color:"#222222"}]}], disableDefaultUI: true });
-                loadHeatmap();
-            } catch(e) { document.getElementById('map-container').innerHTML="<div class='flex items-center justify-center h-full text-xs font-mono text-gray-500'>[MAPS_API_KEY_MISSING]</div>"; }
+            if(map) return;
+            const startLat = userCoords ? parseFloat(userCoords.lat) : 26.4499;
+            const startLon = userCoords ? parseFloat(userCoords.lon) : 80.3319;
+            
+            map = L.map('map-container').setView([startLat, startLon], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap & CartoDB'
+            }).addTo(map);
+            
+            layerGroup = L.layerGroup().addTo(map);
+            loadHeatmap();
         }
 
         async function loadHeatmap() {
             if(!map) return;
             const r = await api('/demand_heatmap');
-            if(r.success && r.data.length && typeof google.maps.visualization !== 'undefined') {
-                const heatData = r.data.map(d => ({location: new google.maps.LatLng(d.lat, d.lon), weight: d.weight}));
-                heatmap = new google.maps.visualization.HeatmapLayer({ data: heatData, map: null, radius: 45, gradient: ['rgba(0,0,0,0)','rgba(225,29,72,0.1)','rgba(225,29,72,0.4)','rgba(225,29,72,0.8)'] });
+            if(r.success && r.data.length && typeof L.heatLayer !== 'undefined') {
+                const heatData = r.data.map(d => [d.lat, d.lon, d.weight]);
+                heatmap = L.heatLayer(heatData, {radius: 35, blur: 25, gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}});
             }
         }
-        function toggleHeatmap() { if(heatmap) heatmap.setMap(heatmap.getMap() ? null : map); }
+        function toggleHeatmap() { 
+            if(!heatmap) return;
+            if(map.hasLayer(heatmap)) map.removeLayer(heatmap);
+            else heatmap.addTo(map);
+        }
 
         async function searchDonors() {
             if(!userCoords) return showToast('Location sync required','error');
@@ -911,17 +1018,20 @@
             setLoading('btn-scan', false, 'Scan Local');
             
             if(r.success) {
-                markers.forEach(m => {if(m.setMap) m.setMap(null);}); markers = []; let html = '';
+                if(layerGroup) layerGroup.clearLayers();
+                let html = '';
                 r.data.forEach((d,i) => {
                     const isHosp = d.type === 'hospital';
                     html += `<div class="bg-black/40 p-4 rounded-xl flex justify-between items-center border border-white/5 ${i===0?'border-l-4 border-l-green-500 bg-green-500/5':''} transition hover:bg-gray-700"><div><b class="text-white text-sm">${isHosp? '<i class="fa-solid fa-hospital text-blue-500 mr-1"></i> ':'<i class="fa-solid fa-user text-rose-500 mr-1"></i> '} ${d.name}</b> ${d.is_verified?'<i class="fa-solid fa-certificate text-blue-400 text-xs ml-1"></i>':''}<br><span class="text-xs text-gray-500 font-mono mt-1 block">${d.distance_km} KM RAD</span></div><span class="text-white font-black bg-white/10 border border-white/10 px-3 py-1 rounded text-xs">${bg}</span></div>`;
                     if(map && d.lat && d.lon) {
-                        const m = new google.maps.Marker({position: {lat: d.lat, lng: d.lon}, map: map, icon: {path: isHosp? google.maps.SymbolPath.BACKWARD_CLOSED_ARROW : google.maps.SymbolPath.CIRCLE, scale: isHosp?5:6, fillColor: isHosp?"#3b82f6":"#10b981", fillOpacity: 1, strokeWeight: 2, strokeColor: "#050505"}});
-                        markers.push(m);
+                        const iconColor = isHosp ? '#3b82f6' : '#10b981';
+                        const markerHtml = `<div style="background-color: ${iconColor}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px ${iconColor};"></div>`;
+                        const customIcon = L.divIcon({className: 'custom-div-icon', html: markerHtml, iconSize: [16, 16]});
+                        L.marker([d.lat, d.lon], {icon: customIcon}).bindPopup(`<b>${d.name}</b><br>${bg} Available`).addTo(layerGroup);
                     }
                 });
                 document.getElementById('donor-results').innerHTML = html || '<div class="text-center py-6 text-gray-500 text-xs font-mono uppercase">0 matches found. Use Broadcast.</div>';
-                if(map) map.setCenter({lat: userCoords.lat, lng: userCoords.lon});
+                if(map) map.setView([userCoords.lat, userCoords.lon], 12);
             }
         }
 
@@ -984,7 +1094,6 @@
             if(r.success) { showToast('Execution successful','success'); loadAdmin(); }
         }
 
-        // Send Global Broadcast
         async function sendGlobalBroadcast() {
             const msg = document.getElementById('adm-broadcast-msg').value;
             if(!msg) return showToast('Please enter a message to broadcast', 'error');
