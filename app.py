@@ -21,9 +21,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-lifedrop-k
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Razorpay Client Setup using your keys
+# Razorpay Client Setup
 razorpay_client = razorpay.Client(auth=("rzp_test_SR0otvXz1f0cJS", "EuBebpg2glCHSaVhnmI0BoJz"))
-
 DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:your_password@db.supabase.co:5432/postgres')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -56,10 +55,17 @@ def init_db():
         CREATE TABLE IF NOT EXISTS donations (id SERIAL PRIMARY KEY, donor_id INTEGER, request_id INTEGER, status TEXT DEFAULT 'accepted', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE, FOREIGN KEY(request_id) REFERENCES requests(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, donor_id INTEGER, rating INTEGER, comment TEXT, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS enquiries (id SERIAL PRIMARY KEY, name TEXT, email TEXT, message TEXT, status TEXT DEFAULT 'open', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, razorpay_order_id TEXT, razorpay_payment_id TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, screenshot_path TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
         CREATE INDEX IF NOT EXISTS idx_blood_group ON donors(blood_group);
         CREATE INDEX IF NOT EXISTS idx_request_location ON requests(lat, lon);
     ''')
+    
+    # AUTO-FIX FOR DB: Dynamically add missing columns if table already exists
+    try:
+        cursor.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_order_id TEXT;")
+        cursor.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT;")
+    except Exception as e:
+        pass
     
     cursor.execute("SELECT * FROM users WHERE email='nikhiladmin'")
     if not cursor.fetchone():
@@ -106,7 +112,6 @@ def token_required(f):
             current_user = c.fetchone()
             if not current_user or current_user['is_banned']: raise Exception()
         except Exception as e:
-            print("Auth Error:", e)
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
@@ -129,6 +134,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 @socketio.on('join')
 def on_join(data):
     if data.get('user_id'): join_room(f"user_{data['user_id']}")
+    join_room("global_room")
 
 @app.route('/api/auth', methods=['POST'])
 def auth():
@@ -142,7 +148,7 @@ def auth():
         if c.fetchone(): return jsonify({"success": False, "message": "Email already exists!"})
         c.execute("INSERT INTO users (email, password, role) VALUES (%s, %s, %s)", (email, generate_password_hash(password), data.get('role', 'user')))
         db.commit()
-        return jsonify({"success": True, "message": "Account created! Welcome to LifeDrop."})
+        return jsonify({"success": True, "message": "Account created! You can now sign in."})
     
     elif action == 'login':
         c.execute("SELECT * FROM users WHERE email=%s", (email,))
@@ -283,20 +289,12 @@ def accept_request(current_user):
     socketio.emit('request_accepted', {"donor_name": donor['name'], "message": f"{donor['name']} is en route to help!"}, room=f"user_{req['user_id']}")
     return jsonify({"success": True, "message": "Request accepted. You are a hero."})
 
-
-# --- REAL RAZORPAY INTEGRATION ---
 @app.route('/api/payment/create_order', methods=['POST'])
 @token_required
 def create_order(current_user):
     data = request.json
     req_id = data.get('request_id')
-    # 20 INR = 2000 paise
-    order_data = {
-        "amount": 2000,
-        "currency": "INR",
-        "receipt": f"receipt_req_{req_id}",
-        "notes": {"request_id": req_id, "user_id": current_user['id']}
-    }
+    order_data = {"amount": 2000, "currency": "INR", "receipt": f"receipt_req_{req_id}", "notes": {"request_id": req_id, "user_id": current_user['id']}}
     try:
         order = razorpay_client.order.create(data=order_data)
         return jsonify({"success": True, "order_id": order['id'], "amount": order['amount']})
@@ -308,26 +306,20 @@ def create_order(current_user):
 def verify_payment(current_user):
     data = request.json
     req_id = data.get('request_id')
-    
     try:
         razorpay_client.utility.verify_payment_signature({
             'razorpay_order_id': data.get('razorpay_order_id'),
             'razorpay_payment_id': data.get('razorpay_payment_id'),
             'razorpay_signature': data.get('razorpay_signature')
         })
-        
-        # Payment verified successfully! Auto-apply the boost.
         db = get_db()
         db.cursor().execute("INSERT INTO payments (user_id, request_id, amount, razorpay_order_id, razorpay_payment_id, status) VALUES (%s, %s, 20.0, %s, %s, 'approved')", 
                             (current_user['id'], req_id, data.get('razorpay_order_id'), data.get('razorpay_payment_id')))
         db.cursor().execute("UPDATE requests SET is_priority=TRUE WHERE id=%s", (req_id,))
         db.commit()
         return jsonify({"success": True, "message": "Payment verified! Your request has been boosted to Priority."})
-    except razorpay.errors.SignatureVerificationError:
-        return jsonify({"success": False, "message": "Payment verification failed."})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
+        return jsonify({"success": False, "message": "Payment verification failed."})
 
 @app.route('/api/enquiry', methods=['POST'])
 def submit_enquiry():
@@ -383,8 +375,10 @@ def admin_data(current_user):
     
     c.execute("SELECT id, name, is_verified, document_path FROM donors")
     donors = c.fetchall()
+
+    c.execute("SELECT * FROM hospitals")
+    hospitals = c.fetchall()
     
-    # We now fetch all completed payments
     c.execute("SELECT * FROM payments ORDER BY id DESC LIMIT 20")
     payments = c.fetchall()
     
@@ -401,6 +395,7 @@ def admin_data(current_user):
         "success": True,
         "users": [dict(u) for u in users],
         "donors": [dict(d) for d in donors],
+        "hospitals": [dict(h) for h in hospitals],
         "payments": [dict(p) for p in payments],
         "enquiries": [dict(e) for e in enquiries],
         "stats": {
@@ -420,10 +415,23 @@ def admin_action(current_user):
     
     if action == 'toggle_ban': c.execute("UPDATE users SET is_banned = NOT is_banned WHERE id=%s", (target_id,))
     elif action == 'verify_donor': c.execute("UPDATE donors SET is_verified=TRUE WHERE id=%s", (target_id,))
+    elif action == 'approve_payment':
+        c.execute("SELECT request_id FROM payments WHERE id=%s", (target_id,))
+        req_id = c.fetchone()['request_id']
+        c.execute("UPDATE requests SET is_priority=TRUE WHERE id=%s", (req_id,))
+        c.execute("UPDATE payments SET status='approved' WHERE id=%s", (target_id,))
     elif action == 'close_enquiry': c.execute("UPDATE enquiries SET status='closed' WHERE id=%s", (target_id,))
     
     db.commit()
     return jsonify({"success": True})
+
+@app.route('/api/admin/broadcast', methods=['POST'])
+@token_required
+@admin_required
+def admin_broadcast(current_user):
+    message = request.json.get('message')
+    socketio.emit('global_alert', {"message": message}, room="global_room")
+    return jsonify({"success": True, "message": "Broadcast sent to all online users."})
 
 if __name__ == '__main__':
     socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
