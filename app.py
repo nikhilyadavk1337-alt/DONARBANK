@@ -515,8 +515,18 @@ def admin_action(current_user):
     data = request.json
     db = get_db()
     c = db.cursor()
-    if data['action'] == 'toggle_ban': c.execute("UPDATE users SET is_banned = NOT is_banned WHERE id=%s", (data['target_id'],))
-    elif data['action'] == 'verify_donor': c.execute("UPDATE donors SET is_verified=TRUE WHERE id=%s", (data['target_id'],))
+    
+    if data['action'] == 'toggle_ban': 
+        c.execute("UPDATE users SET is_banned = NOT is_banned WHERE id=%s", (data['target_id'],))
+    elif data['action'] == 'verify_donor': 
+        c.execute("UPDATE donors SET is_verified=TRUE WHERE id=%s", (data['target_id'],))
+    elif data['action'] == 'close_enquiry': 
+        # Fixes the missing 'Close Ticket' logic
+        c.execute("UPDATE enquiries SET status='closed' WHERE id=%s", (data['target_id'],))
+    elif data['action'] == 'delete_enquiry': 
+        # NEW: Hard delete from database
+        c.execute("DELETE FROM enquiries WHERE id=%s", (data['target_id'],))
+        
     db.commit()
     return jsonify({"success": True})
 
