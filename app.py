@@ -1,3 +1,6 @@
+import gevent.monkey
+gevent.monkey.patch_all() # This fixes the MonkeyPatchWarning in your logs
+
 import os
 import math
 from datetime import datetime, timedelta
@@ -17,7 +20,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-lifedrop-k
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Supabase Postgres URL (Set this in Render Environment Variables)
+# Supabase Postgres URL
 DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:your_password@db.supabase.co:5432/postgres')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -61,7 +64,6 @@ def init_db():
     db.commit()
     db.close()
 
-# Initialize DB (only if running locally or first time on Render)
 try:
     init_db()
 except Exception as e:
@@ -69,6 +71,9 @@ except Exception as e:
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
+
+@app.route('/favicon.ico')
+def favicon(): return '', 204
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -84,6 +89,7 @@ def sw():
     res.headers['Content-Type'] = 'application/javascript'
     return res
 
+# --- FIXED: PostgreSQL proper execution structure to prevent 401 crashes ---
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -92,9 +98,14 @@ def token_required(f):
         try:
             token = token.split(" ")[1]
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = get_db().cursor().execute("SELECT * FROM users WHERE id=%s", (data['user_id'],)).fetchone()
+            db = get_db()
+            c = db.cursor()
+            c.execute("SELECT * FROM users WHERE id=%s", (data['user_id'],))
+            current_user = c.fetchone()
             if not current_user or current_user['is_banned']: raise Exception()
-        except: return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        except Exception as e:
+            print("Auth Error:", e) # Prints the exact error in Render logs if it happens
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
 
@@ -193,7 +204,6 @@ def find_donors(current_user):
     c.execute("SELECT * FROM donors WHERE blood_group=%s AND available=TRUE AND user_id!=%s", (bg, current_user['id']))
     donors = c.fetchall()
     
-    # Secure string replacement for Postgres column names
     col_name = f"stock_{bg.replace('+','p').replace('-','n')}"
     c.execute(f"SELECT * FROM hospitals WHERE {col_name} > 0")
     hospitals = c.fetchall()
@@ -253,7 +263,6 @@ def accept_request(current_user):
     if not donor: return jsonify({"success": False, "message": "Please setup your donor profile first."})
     
     if donor['last_donation_date']:
-        # Ensure correct datetime parsing based on Postgres format
         if isinstance(donor['last_donation_date'], str):
             last_don = datetime.strptime(donor['last_donation_date'].split('.')[0], '%Y-%m-%d %H:%M:%S')
         else:
