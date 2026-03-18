@@ -1,5 +1,5 @@
 import gevent.monkey
-gevent.monkey.patch_all() # This fixes the MonkeyPatchWarning in your logs
+gevent.monkey.patch_all()
 
 import os
 import math
@@ -14,13 +14,16 @@ from flask_socketio import SocketIO, emit, join_room
 import traceback
 import psycopg2
 import psycopg2.extras
+import razorpay
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-lifedrop-key')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Supabase Postgres URL
+# Razorpay Client Setup using your keys
+razorpay_client = razorpay.Client(auth=("rzp_test_SR0otvXz1f0cJS", "EuBebpg2glCHSaVhnmI0BoJz"))
+
 DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:your_password@db.supabase.co:5432/postgres')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -53,7 +56,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS donations (id SERIAL PRIMARY KEY, donor_id INTEGER, request_id INTEGER, status TEXT DEFAULT 'accepted', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE, FOREIGN KEY(request_id) REFERENCES requests(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, donor_id INTEGER, rating INTEGER, comment TEXT, FOREIGN KEY(donor_id) REFERENCES donors(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS enquiries (id SERIAL PRIMARY KEY, name TEXT, email TEXT, message TEXT, status TEXT DEFAULT 'open', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, screenshot_path TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER, request_id INTEGER, amount REAL, razorpay_order_id TEXT, razorpay_payment_id TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
         CREATE INDEX IF NOT EXISTS idx_blood_group ON donors(blood_group);
         CREATE INDEX IF NOT EXISTS idx_request_location ON requests(lat, lon);
     ''')
@@ -89,7 +92,6 @@ def sw():
     res.headers['Content-Type'] = 'application/javascript'
     return res
 
-# --- FIXED: PostgreSQL proper execution structure to prevent 401 crashes ---
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -104,7 +106,7 @@ def token_required(f):
             current_user = c.fetchone()
             if not current_user or current_user['is_banned']: raise Exception()
         except Exception as e:
-            print("Auth Error:", e) # Prints the exact error in Render logs if it happens
+            print("Auth Error:", e)
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
@@ -281,20 +283,51 @@ def accept_request(current_user):
     socketio.emit('request_accepted', {"donor_name": donor['name'], "message": f"{donor['name']} is en route to help!"}, room=f"user_{req['user_id']}")
     return jsonify({"success": True, "message": "Request accepted. You are a hero."})
 
-@app.route('/api/payment/priority', methods=['POST'])
+
+# --- REAL RAZORPAY INTEGRATION ---
+@app.route('/api/payment/create_order', methods=['POST'])
 @token_required
-def boost_request(current_user):
-    req_id = request.form.get('request_id')
-    file = request.files.get('screenshot')
-    if not file: return jsonify({"success": False, "message": "Payment proof screenshot is required."})
+def create_order(current_user):
+    data = request.json
+    req_id = data.get('request_id')
+    # 20 INR = 2000 paise
+    order_data = {
+        "amount": 2000,
+        "currency": "INR",
+        "receipt": f"receipt_req_{req_id}",
+        "notes": {"request_id": req_id, "user_id": current_user['id']}
+    }
+    try:
+        order = razorpay_client.order.create(data=order_data)
+        return jsonify({"success": True, "order_id": order['id'], "amount": order['amount']})
+    except Exception as e:
+        return jsonify({"success": False, "message": "Failed to initiate payment gateway."})
+
+@app.route('/api/payment/verify', methods=['POST'])
+@token_required
+def verify_payment(current_user):
+    data = request.json
+    req_id = data.get('request_id')
     
-    filename = secure_filename(f"pay_{current_user['id']}_{file.filename}")
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    
-    db = get_db()
-    db.cursor().execute("INSERT INTO payments (user_id, request_id, amount, screenshot_path) VALUES (%s, %s, 20.0, %s)", (current_user['id'], req_id, filename))
-    db.commit()
-    return jsonify({"success": True, "message": "Proof uploaded. Boost will activate upon admin confirmation."})
+    try:
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': data.get('razorpay_order_id'),
+            'razorpay_payment_id': data.get('razorpay_payment_id'),
+            'razorpay_signature': data.get('razorpay_signature')
+        })
+        
+        # Payment verified successfully! Auto-apply the boost.
+        db = get_db()
+        db.cursor().execute("INSERT INTO payments (user_id, request_id, amount, razorpay_order_id, razorpay_payment_id, status) VALUES (%s, %s, 20.0, %s, %s, 'approved')", 
+                            (current_user['id'], req_id, data.get('razorpay_order_id'), data.get('razorpay_payment_id')))
+        db.cursor().execute("UPDATE requests SET is_priority=TRUE WHERE id=%s", (req_id,))
+        db.commit()
+        return jsonify({"success": True, "message": "Payment verified! Your request has been boosted to Priority."})
+    except razorpay.errors.SignatureVerificationError:
+        return jsonify({"success": False, "message": "Payment verification failed."})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
 
 @app.route('/api/enquiry', methods=['POST'])
 def submit_enquiry():
@@ -351,7 +384,8 @@ def admin_data(current_user):
     c.execute("SELECT id, name, is_verified, document_path FROM donors")
     donors = c.fetchall()
     
-    c.execute("SELECT * FROM payments WHERE status='pending'")
+    # We now fetch all completed payments
+    c.execute("SELECT * FROM payments ORDER BY id DESC LIMIT 20")
     payments = c.fetchall()
     
     c.execute("SELECT * FROM enquiries ORDER BY id DESC")
@@ -386,11 +420,6 @@ def admin_action(current_user):
     
     if action == 'toggle_ban': c.execute("UPDATE users SET is_banned = NOT is_banned WHERE id=%s", (target_id,))
     elif action == 'verify_donor': c.execute("UPDATE donors SET is_verified=TRUE WHERE id=%s", (target_id,))
-    elif action == 'approve_payment':
-        c.execute("SELECT request_id FROM payments WHERE id=%s", (target_id,))
-        req_id = c.fetchone()['request_id']
-        c.execute("UPDATE requests SET is_priority=TRUE WHERE id=%s", (req_id,))
-        c.execute("UPDATE payments SET status='approved' WHERE id=%s", (target_id,))
     elif action == 'close_enquiry': c.execute("UPDATE enquiries SET status='closed' WHERE id=%s", (target_id,))
     
     db.commit()
