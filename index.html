@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=visualization"></script>
+    
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#050505">
@@ -20,9 +22,11 @@
         :root { --bg-dark: #050505; --card-bg: rgba(20, 20, 20, 0.6); --accent: #e11d48; }
         body { background-color: var(--bg-dark); color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; scroll-behavior: smooth; }
         
+        /* Premium Glassmorphism & Bento Grid */
         .bento-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s, box-shadow 0.4s; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden;}
         .bento-card:hover { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 10px 40px rgba(225, 29, 72, 0.15); }
         
+        /* Custom Inputs */
         .modern-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 16px; color: white; width: 100%; transition: all 0.3s; }
         .modern-input:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: inset 0 0 0 1px var(--accent); }
         
@@ -30,12 +34,15 @@
         .page-section.active { display: block; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
         
+        /* Loader Spinner */
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Ambient Background Glows */
         .glow-blob { position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; animation: drift 10s ease-in-out infinite alternate; pointer-events: none;}
         @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, -50px) scale(1.1); } }
         
+        /* Image Animations */
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .image-overlay { position: relative; overflow: hidden; border-radius: 1rem; }
@@ -47,12 +54,14 @@
         .toast { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 16px; display: flex; align-items: flex-start; gap: 12px; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
 
+        /* Certificate Styling */
         .cert-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100; align-items:center; justify-content:center; backdrop-filter: blur(10px);}
         .cert-modal.active { display:flex; }
         .cert-frame { background: #fdfbf7; border: 2px solid #d4af37; padding: 4px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative;}
         .cert-inner { border: 1px solid #d4af37; padding: 40px 60px; text-align: center; position: relative;}
         .font-serif-custom { font-family: 'Playfair Display', serif; }
 
+        /* Mobile Nav */
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 60; backdrop-filter: blur(15px); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
     </style>
@@ -257,7 +266,7 @@
                             <p class="text-sm text-gray-400 mb-6 font-medium">Bypass algorithmic routing. Push your request to the top of all active donor feeds in your region for just ₹20.</p>
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48 bg-black/50" placeholder="Request ID">
-                                <button onclick="initiatePayment()" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] hover:opacity-90 text-black font-black py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">Pay via Razorpay</button>
+                                <button onclick="initiatePayment()" id="btn-pay-boost" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] hover:opacity-90 text-black font-black py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">Pay via Razorpay</button>
                             </div>
                         </div>
                     </div>
@@ -320,7 +329,7 @@
                     </div>
                     
                     <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[280px]">
-                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-crown text-amber-400"></i> Boost Verifications</h3>
+                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-crown text-amber-400"></i> Successful Boosts</h3>
                         <div id="adm-pays" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
                     </div>
                 </div>
@@ -359,23 +368,6 @@
         </section>
 
     </main>
-
-    <div id="pay-modal" class="cert-modal px-4">
-        <div class="bento-card p-8 max-w-md w-full relative transform transition-all border-[#d4af37]/30">
-            <button onclick="document.getElementById('pay-modal').classList.remove('active')" class="absolute top-5 right-5 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="w-12 h-12 bg-[#d4af37]/10 rounded-full flex items-center justify-center mb-4 border border-[#d4af37]/20"><i class="fa-solid fa-bolt text-[#d4af37] text-xl"></i></div>
-            <h3 class="text-2xl font-black text-white mb-2">Verify Transaction</h3>
-            <p class="text-sm text-gray-400 mb-6 leading-relaxed">Upload the screenshot of your Razorpay ₹20 payment to activate global priority routing.</p>
-            <div class="bg-black/50 border border-dashed border-white/20 rounded-xl p-4 mb-6 hover:border-[#d4af37] transition cursor-pointer relative overflow-hidden">
-                <input type="file" id="pay-screenshot" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                <div class="text-center pointer-events-none">
-                    <i class="fa-regular fa-image text-3xl text-gray-500 mb-2"></i>
-                    <p class="text-xs font-bold text-gray-300 uppercase tracking-widest">Tap to select image</p>
-                </div>
-            </div>
-            <button onclick="submitPaymentProof()" id="btn-pay-proof" class="w-full bg-[#d4af37] text-black hover:bg-[#c5a028] py-3.5 rounded-xl font-black transition shadow-[0_0_15px_rgba(212,175,55,0.4)] flex justify-center items-center h-[52px]">Submit Ledger</button>
-        </div>
-    </div>
 
     <div id="cert-modal" class="cert-modal px-2">
         <div class="cert-frame max-w-4xl w-full relative text-center shadow-[0_0_60px_rgba(0,0,0,0.8)]">
@@ -419,17 +411,9 @@
             }
         }
         
-        function navToMobile(sec) {
-            toggleMobileMenu();
-            navTo(sec);
-        }
-        
-        function logoutMobile() {
-            toggleMobileMenu();
-            logout();
-        }
+        function navToMobile(sec) { toggleMobileMenu(); navTo(sec); }
+        function logoutMobile() { toggleMobileMenu(); logout(); }
 
-        // UI Helpers
         function setLoading(btnId, isLoading, originalText) {
             const btn = document.getElementById(btnId);
             if(!btn) return;
@@ -470,14 +454,12 @@
 
         function checkAuth() {
             const t = localStorage.getItem('token'), r = localStorage.getItem('role');
-            // Desktop Nav
             document.getElementById('nav-login').classList.toggle('hidden', !!t);
             document.getElementById('nav-logout').classList.toggle('hidden', !t);
             document.getElementById('nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
             document.getElementById('nav-hospital').classList.toggle('hidden', r!=='hospital');
             document.getElementById('nav-admin').classList.toggle('hidden', r!=='admin');
             
-            // Mobile Nav
             document.getElementById('mob-nav-login').classList.toggle('hidden', !!t);
             document.getElementById('mob-nav-logout').classList.toggle('hidden', !t);
             document.getElementById('mob-nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
@@ -555,8 +537,7 @@
             const file = document.getElementById('prof-doc').files[0]; if(file) fd.append('document', file);
             const r = await api('/profile/update', 'POST', fd, true);
             setLoading('btn-save-prof', false, 'Save Configuration');
-            showToast(r.message, r.success?'success':'error'); 
-            if(r.success) loadDash();
+            showToast(r.message, r.success?'success':'error'); if(r.success) loadDash();
         }
 
         async function saveHospitalProfile() {
@@ -654,20 +635,40 @@
             if(r.success) { showToast(`Signal #${r.request_id} Active. AI routing...`, 'success'); document.getElementById('boost-req-id').value = r.request_id; }
         }
 
-        // Razorpay Boost
-        let currentBoostReqId = null;
-        function initiatePayment() {
-            const reqId = document.getElementById('boost-req-id').value; if(!reqId) return showToast('Input Request ID','error');
-            currentBoostReqId = reqId; window.open('https://razorpay.me/@byashish', '_blank'); document.getElementById('pay-modal').classList.add('active');
-        }
+        // REAL RAZORPAY INTEGRATION
+        async function initiatePayment() {
+            const reqId = document.getElementById('boost-req-id').value; 
+            if(!reqId) return showToast('Input Request ID','error');
+            
+            setLoading('btn-pay-boost', true, '');
+            const r = await api('/payment/create_order', 'POST', {request_id: reqId});
+            setLoading('btn-pay-boost', false, 'Pay via Razorpay');
+            
+            if(!r.success) return showToast('Failed to connect to gateway', 'error');
 
-        async function submitPaymentProof() {
-            const file = document.getElementById('pay-screenshot').files[0]; if(!file) return showToast('Attach ledger screenshot','error');
-            setLoading('btn-pay-proof', true, '');
-            const fd = new FormData(); fd.append('screenshot', file); fd.append('request_id', currentBoostReqId);
-            const r = await api('/payment/priority', 'POST', fd, true);
-            setLoading('btn-pay-proof', false, 'Submit Ledger');
-            showToast(r.message, r.success?'success':'error'); if(r.success) document.getElementById('pay-modal').classList.remove('active');
+            var options = {
+                "key": "rzp_test_SR0otvXz1f0cJS",
+                "amount": r.amount,
+                "currency": "INR",
+                "name": "LifeDrop Network",
+                "description": "Priority Emergency Boost",
+                "image": "https://cdn-icons-png.flaticon.com/512/3063/3063205.png",
+                "order_id": r.order_id,
+                "handler": async function (response){
+                    const v = await api('/payment/verify', 'POST', {
+                        request_id: reqId,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    });
+                    showToast(v.message, v.success ? 'success' : 'error');
+                    if(v.success) loadDash();
+                },
+                "theme": { "color": "#e11d48" }
+            };
+            var rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (res){ showToast(res.error.description, 'error'); });
+            rzp.open();
         }
 
         // Power Admin
@@ -682,9 +683,7 @@
                 
                 document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
-                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="flex gap-2"><a href="/uploads/${p.screenshot_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect Ledger</a><button onclick="adminAction('approve_payment', ${p.id})" class="flex-1 bg-[#d4af37] text-black py-2.5 rounded-lg text-xs font-bold hover:bg-[#c5a028] transition">Verify Boost</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
-                
-                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.email}</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
+                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="text-xs font-mono text-gray-400">Status: <span class="${p.status==='approved'?'text-green-500':'text-yellow-500'} uppercase font-bold">${p.status}</span></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
             }
         }
 
