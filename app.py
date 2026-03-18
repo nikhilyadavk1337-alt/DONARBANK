@@ -166,7 +166,7 @@ def favicon(): return '', 204
 
 @app.route('/<filename>')
 def serve_root_images(filename):
-    if filename.endswith(('.png', '.jpg', '.jpeg', '.gif')): return send_from_directory('.', filename)
+    if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.json', '.js')): return send_from_directory('.', filename)
     return "Not found", 404
 
 @app.route('/uploads/<filename>')
@@ -386,6 +386,62 @@ def download_certificate(donor_id):
     
     pdf_buffer.seek(0)
     return send_file(pdf_buffer, as_attachment=True, download_name=f"LifeDrop_Hero_{donor['name']}.pdf", mimetype='application/pdf')
+
+# ---------------------------------------------------------
+# NEW MISSING ENDPOINTS ADDED BELOW
+# ---------------------------------------------------------
+
+@app.route('/api/hospital/stock', methods=['POST'])
+@token_required
+def update_hospital_stock(current_user):
+    if current_user['role'] != 'hospital':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    data = request.json
+    db = get_db()
+    c = db.cursor()
+    c.execute("""
+        UPDATE hospitals 
+        SET stock_ap=%s, stock_an=%s, stock_bp=%s, stock_bn=%s, 
+            stock_op=%s, stock_on=%s, stock_abp=%s, stock_abn=%s 
+        WHERE user_id=%s
+    """, (
+        data.get('A+', 0), data.get('A-', 0), data.get('B+', 0), data.get('B-', 0),
+        data.get('O+', 0), data.get('O-', 0), data.get('AB+', 0), data.get('AB-', 0),
+        current_user['id']
+    ))
+    db.commit()
+    return jsonify({"success": True, "message": "Inventory synchronized to global network!"})
+
+@app.route('/api/admin/broadcast', methods=['POST'])
+@token_required
+@admin_required
+def admin_broadcast(current_user):
+    msg = request.json.get('message')
+    if msg:
+        socketio.emit('global_alert', {"message": msg}, room="global_room")
+        return jsonify({"success": True, "message": "Alert broadcasted globally via WebSockets!"})
+    return jsonify({"success": False, "message": "Alert message required."})
+
+@app.route('/api/enquiry', methods=['POST'])
+def submit_enquiry():
+    data = request.json
+    db = get_db()
+    c = db.cursor()
+    c.execute("INSERT INTO enquiries (name, email, message) VALUES (%s, %s, %s)", 
+              (data.get('name'), data.get('email'), data.get('message')))
+    db.commit()
+    return jsonify({"success": True, "message": "Enquiry submitted successfully."})
+
+@app.route('/api/payment/priority', methods=['POST'])
+@token_required
+def payment_priority(current_user):
+    # Process screenshot validation
+    req_id = request.form.get('request_id')
+    db = get_db()
+    c = db.cursor()
+    c.execute("UPDATE requests SET is_priority=TRUE WHERE id=%s", (req_id,))
+    db.commit()
+    return jsonify({"success": True, "message": "Priority Boost Active!"})
 
 # ---------------------------------------------------------
 # DASHBOARD, ADMIN & PAYMENTS
