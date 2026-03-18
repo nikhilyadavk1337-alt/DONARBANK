@@ -1470,9 +1470,21 @@
                 document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
                 document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="text-xs font-mono text-gray-400">Status: <span class="${p.status==='approved'?'text-green-500':'text-yellow-500'} uppercase font-bold">${p.status}</span></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
-                
-                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.name} (${e.email})</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
-            }
+
+                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `
+    <div class="p-4 bg-black/40 rounded-xl border border-white/5 relative group">
+        <button onclick="adminAction('delete_enquiry', ${e.id})" class="absolute top-4 right-4 text-gray-500 hover:text-rose-500 transition" title="Delete Ticket">
+            <i class="fa-solid fa-trash"></i>
+        </button>
+        <div class="flex justify-between items-center mb-3 pr-8">
+            <span class="text-xs font-bold text-white">${e.name} (${e.email})</span>
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span>
+        </div>
+        <p class="text-sm text-gray-400 mb-4">${e.message}</p>
+        ${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}
+    </div>
+`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
+                   }
         }
 
         async function adminAction(act, id) {
