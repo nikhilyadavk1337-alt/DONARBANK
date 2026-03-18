@@ -21,7 +21,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:your_password@db.supabase.co:5432/postgres')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
 @app.errorhandler(Exception)
 def handle_exception(e):
