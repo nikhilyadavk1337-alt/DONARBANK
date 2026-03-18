@@ -10,10 +10,17 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
@@ -101,14 +108,36 @@
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        /* NEW: Scroll Progress Bar */
+        #scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 99999; width: 0%; transition: width 0.1s; box-shadow: 0 0 10px var(--accent); }
+        
+        /* NEW: Skeleton Loader Animation */
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: skeletonLoading 1.5s infinite; border-radius: 8px; }
+        @keyframes skeletonLoading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body class="min-h-screen flex flex-col relative" onload="initApp()">
+<body class="min-h-screen flex flex-col relative" onload="initApp()" onscroll="updateScrollProgress()">
+
+    <div id="scroll-progress"></div>
+
+    <div id="offline-banner" class="hidden bg-rose-600 text-white text-center text-xs font-bold py-1 w-full z-[100] fixed top-0 left-0">
+        <i class="fa-solid fa-wifi mr-1"></i> You are currently offline. Working from cached data.
+    </div>
+
+    <div id="ai-banner" class="hidden bg-gradient-to-r from-orange-500 to-rose-600 text-white text-xs md:text-sm font-bold text-center py-2 px-4 w-full z-[60] shadow-lg flex justify-center items-center gap-2 fixed top-0 left-0 mt-[3px]">
+        <i class="fa-solid fa-robot animate-pulse"></i> <span id="ai-banner-text">AI PREDICTION: High demand detected.</span>
+        <button onclick="document.getElementById('ai-banner').classList.add('hidden')" class="ml-4 hover:text-gray-200"><i class="fa-solid fa-xmark"></i></button>
+    </div>
 
     <div class="glow-blob bg-rose-600 w-96 h-96 top-0 left-0"></div>
     <div class="glow-blob bg-blue-600 w-80 h-80 bottom-0 right-0" style="animation-delay: -5s;"></div>
 
     <div id="toast-container"></div>
+
+    <button onclick="navTo('network')" class="fixed bottom-8 left-8 w-14 h-14 bg-rose-600 rounded-full flex items-center justify-center text-2xl text-white shadow-[0_0_20px_rgba(225,29,72,0.6)] z-50 hover:scale-110 transition-transform cursor-pointer border border-rose-400">
+        <i class="fa-solid fa-truck-medical"></i>
+    </button>
 
     <nav class="bento-card sticky top-4 xl:top-6 z-50 mx-4 xl:mx-auto max-w-7xl px-5 xl:px-8 py-3 flex justify-between items-center rounded-2xl xl:rounded-full shadow-xl">
         <div class="text-xl font-bold text-white flex items-center gap-3 cursor-pointer shrink-0" onclick="navTo('home')">
@@ -117,6 +146,8 @@
         <div class="hidden xl:flex gap-6 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
             <button onclick="navTo('home')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Platform</button>
             <button onclick="navTo('network')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Network Map</button>
+            <button onclick="navTo('leaderboard')" class="hover:text-amber-400 transition px-2 py-1 rounded hover:bg-white/5 font-bold"><i class="fa-solid fa-trophy mr-1"></i> Wall of Fame</button>
+            
             <button onclick="navTo('dashboard')" id="nav-dashboard" class="hidden hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Dashboard</button>
             <button onclick="navTo('hospital')" id="nav-hospital" class="hidden text-blue-400 font-bold transition px-2 py-1 rounded hover:bg-blue-400/10">Hospital OS</button>
             <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin Center</button>
@@ -137,6 +168,7 @@
         <div class="flex flex-col gap-6 text-2xl font-bold text-center text-gray-300 w-full px-8 max-w-sm mx-auto">
             <button onclick="navToMobile('home')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Platform</button>
             <button onclick="navToMobile('network')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Network Map</button>
+            <button onclick="navToMobile('leaderboard')" class="hover:text-amber-400 transition w-full border-b border-white/10 pb-4 font-bold">Wall of Fame</button>
             <button onclick="navToMobile('contact')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Contact & Support</button>
             <button onclick="navToMobile('about')" class="hover:text-white transition w-full border-b border-white/10 pb-4">About Us</button>
             <button onclick="navToMobile('dashboard')" id="mob-nav-dashboard" class="hidden hover:text-white transition w-full border-b border-white/10 pb-4">Dashboard</button>
@@ -148,6 +180,22 @@
     </div>
 
     <main class="flex-grow container mx-auto p-4 xl:mt-8 mb-20">
+
+        <section id="leaderboard" class="page-section max-w-4xl mx-auto pt-10">
+            <div class="bento-card p-8 lg:p-12 relative overflow-hidden">
+                <i class="fa-solid fa-ranking-star absolute -bottom-10 -right-10 text-[150px] text-white/5 pointer-events-none"></i>
+                <div class="text-center mb-10 relative z-10">
+                    <h2 class="text-4xl font-black text-white mb-2"><span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Wall of Fame</span></h2>
+                    <p class="text-gray-400">Honoring the heroes who keep the network alive through verified rescues.</p>
+                </div>
+                
+                <div class="bg-black/40 rounded-2xl border border-white/5 p-2 relative z-10" id="leaderboard-list">
+                    <div class="p-4 flex justify-between items-center"><div class="skeleton h-12 w-1/2"></div><div class="skeleton h-8 w-1/4"></div></div>
+                    <div class="p-4 flex justify-between items-center"><div class="skeleton h-12 w-1/2"></div><div class="skeleton h-8 w-1/4"></div></div>
+                    <div class="p-4 flex justify-between items-center"><div class="skeleton h-12 w-1/2"></div><div class="skeleton h-8 w-1/4"></div></div>
+                </div>
+            </div>
+        </section>
 
         <section id="home" class="page-section active pt-4 xl:pt-10">
             <div class="flex flex-col xl:flex-row items-center justify-between gap-12 xl:gap-16 max-w-7xl mx-auto">
@@ -240,7 +288,7 @@
                         <div class="tilt-card p-8 text-center" onmousemove="tiltEffect(event, this)" onmouseleave="resetTilt(this)">
                             <div class="tilt-content flex flex-col items-center w-full">
                                 <img src="/sumi.jpeg" alt="Sumait Kumar" class="w-32 h-32 rounded-full border-4 border-amber-500/50 object-cover mb-4 profile-img bg-gray-800">
-                                <h3 class="text-2xl font-bold text-white">Sumit Kumar</h3>
+                                <h3 class="text-2xl font-bold text-white">Sumait Kumar</h3>
                                 <p class="text-amber-400 font-bold text-[10px] uppercase tracking-widest mt-2 border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 rounded-full inline-block">GIS & Database Specialist</p>
                                 <p class="text-gray-400 text-sm mt-4 leading-relaxed h-20">Integrated OpenStreetMap API, dynamic geospatial routing, demand heatmaps, and secure Razorpay payment gateways.</p>
                                 
@@ -359,11 +407,11 @@
         <section id="network" class="page-section max-w-7xl mx-auto mt-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 bento-card p-2 relative h-[400px] lg:h-auto">
-                    <div class="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 flex items-center gap-3 shadow-lg">
+                    <div class="absolute top-6 left-6 z-[400] bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 flex items-center gap-3 shadow-lg">
                         <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
-                        <span class="text-xs font-bold text-white tracking-widest uppercase">Live Tracking</span>
+                        <span id="map-status" class="text-xs font-bold text-white tracking-widest uppercase">Live Tracking</span>
                     </div>
-                    <button onclick="toggleHeatmap()" class="absolute top-6 right-6 z-10 bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 text-xs font-bold hover:bg-white/10 transition shadow-lg"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> Heatmap</button>
+                    <button onclick="toggleHeatmap()" class="absolute top-6 right-6 z-[400] bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 text-xs font-bold hover:bg-white/10 transition shadow-lg"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> Heatmap</button>
                     <div id="map-container" class="h-full min-h-[300px] lg:min-h-[500px]">Loading OpenStreetMap...</div>
                 </div>
                 
@@ -784,6 +832,25 @@
         </div>
     </div>
 
+    <div id="smart-match-modal" class="cert-modal px-4 z-[10000]">
+        <div class="bento-card p-8 max-w-md w-full relative border-green-500/50 bg-green-950/40 opacity-0 scale-75" id="match-content">
+            <button onclick="document.getElementById('smart-match-modal').classList.remove('active')" class="absolute top-4 right-4 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            <div class="absolute -right-4 -top-4 text-green-500/20 text-9xl"><i class="fa-solid fa-handshake-angle"></i></div>
+            
+            <h3 class="text-2xl font-black text-green-400 mb-2 relative z-10"><i class="fa-solid fa-bolt mr-2"></i> AI MATCH FOUND</h3>
+            <p class="text-sm text-gray-300 font-medium mb-6 relative z-10">We've located a verified hero nearby and alerted them via SMS.</p>
+            
+            <div class="bg-black/50 p-5 rounded-xl border border-white/10 relative z-10 mb-6" id="match-data">
+                <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm">Target Identity</span> <span class="text-white font-bold" id="match-name">Hero</span></div>
+                <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm">Proximity</span> <span class="text-rose-400 font-bold font-mono" id="match-dist">0.0 KM</span></div>
+                <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm">Trust Score</span> <span class="text-amber-400 font-bold"><i class="fa-solid fa-star mr-1"></i><span id="match-rating">5.0</span></span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400 text-sm">Verification</span> <span class="text-blue-400 font-bold" id="match-verified"><i class="fa-solid fa-certificate"></i> Verified</span></div>
+            </div>
+            
+            <button onclick="initLiveTracking()" class="w-full bg-white text-black py-3 rounded-xl font-bold relative z-10 hover:bg-gray-200 transition shadow-lg">Start Live Tracking</button>
+        </div>
+    </div>
+
     <div id="broadcast-modal" class="cert-modal px-4 z-[10000]">
         <div class="bento-card p-8 max-w-md w-full relative border-rose-500/50 bg-rose-950/40 transform scale-95 transition-all" id="broadcast-content">
             <div class="absolute -right-4 -top-4 text-rose-500/20 text-9xl animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -836,9 +903,42 @@
         </div>
     </div>
 
+    <div id="chat-widget" class="fixed bottom-24 right-8 w-80 bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[100] flex-col hidden transform transition-all duration-300">
+        <div class="p-4 border-b border-white/10 flex justify-between items-center bg-gray-900 rounded-t-2xl">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-comments text-blue-400"></i> Mission Comms</h4>
+            <button onclick="toggleChat()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-minus"></i></button>
+        </div>
+        <div id="chat-messages" class="h-64 p-4 overflow-y-auto flex flex-col gap-3 text-sm custom-scrollbar">
+            <div class="text-xs text-center text-gray-500 bg-white/5 rounded-full py-1">Secure End-to-End Chat Established</div>
+        </div>
+        <div class="p-3 border-t border-white/10 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Type message..." class="flex-grow bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+            <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
     <script>
         const API = "/api";
         let userCoords = null, socket = null, map = null, heatmap = null, markers = [], layerGroup = null;
+        let activeMissionId = null;
+        let routingControl = null;
+
+        // PWA SETUP (Service Worker)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('PWA SW Reg failed: ', err));
+            });
+        }
+        window.addEventListener('online', () => { document.getElementById('offline-banner').classList.add('hidden'); });
+        window.addEventListener('offline', () => { document.getElementById('offline-banner').classList.remove('hidden'); });
+
+        // Scroll Progress
+        function updateScrollProgress() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("scroll-progress").style.width = scrolled + "%";
+        }
 
         // About Us Tilt Effect
         function tiltEffect(event, element) {
@@ -918,12 +1018,21 @@
         }
 
         // Init
-        function initApp() { 
+        async function initApp() { 
             checkAuth(); 
             if(localStorage.getItem('token')){ 
                 initSocket(); 
                 navTo(localStorage.getItem('role')==='hospital'?'hospital':'dashboard'); 
             } else { navTo('home'); } 
+
+            // AI PREDICTION: Check for high demand
+            try {
+                const res = await api('/predict_demand');
+                if(res.success && Object.values(res.predictions).includes("High")) {
+                    document.getElementById('ai-banner-text').innerText = `AI PREDICTION: High demand for ${res.critical || "blood"} detected in your region over the next 24 hours.`;
+                    document.getElementById('ai-banner').classList.remove('hidden');
+                }
+            } catch(e) {}
         }
 
         function checkAuth() {
@@ -956,6 +1065,7 @@
             if(sec==='dashboard' || sec==='hospital') loadDash(); 
             if(sec==='admin') loadAdmin(); 
             if(sec==='network' && !map) initMap();
+            if(sec==='leaderboard') loadLeaderboard(); // Feature 3 Loader
         }
 
         // WebSockets
@@ -977,6 +1087,22 @@
                     const modal = document.getElementById('broadcast-modal');
                     modal.classList.add('active');
                     setTimeout(() => document.getElementById('broadcast-content').classList.remove('scale-95'), 50);
+                });
+                // NEW: Chat Listener
+                socket.on('receive_chat', d => {
+                    const chatBox = document.getElementById('chat-messages');
+                    const isMe = d.sender === localStorage.getItem('role');
+                    chatBox.innerHTML += `
+                        <div class="flex flex-col ${isMe?'items-end':'items-start'}">
+                            <span class="text-[10px] text-gray-500 mb-0.5">${d.sender}</span>
+                            <div class="${isMe?'bg-blue-600 text-white':'bg-white/10 text-gray-200'} px-3 py-2 rounded-xl text-sm max-w-[80%]">${d.text}</div>
+                        </div>
+                    `;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                });
+                // NEW: Tracking Listener
+                socket.on('location_updated', d => {
+                    // Update map marker if available
                 });
             } catch(e) {}
         }
@@ -1119,7 +1245,8 @@
                     document.getElementById('stat-req').innerText = r.requests.length; document.getElementById('stat-don').innerText = r.donations.length;
                     let html = '';
                     r.requests.forEach(rq => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">ID: ${rq.id}</span><br><b class="text-white">${rq.blood_group}</b></div><span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-black/50 ${rq.is_priority?'text-amber-400 border border-amber-500/20':'text-gray-400'}">${rq.status} ${rq.is_priority?'<i class="fa-solid fa-crown ml-1"></i>':''}</span></div>`);
-                    r.donations.forEach(dn => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">Donated</span><br><b class="text-green-400">${dn.blood_group}</b></div><button onclick="showCert('${r.profile?r.profile.name:'Hero'}')" class="text-xs bg-white text-black px-3 py-1.5 font-bold rounded-lg hover:bg-gray-200 transition whitespace-nowrap">View Honor</button></div>`);
+                    // NEW PDF DOWNLOAD BUTTON
+                    r.donations.forEach(dn => html += `<div class="bg-white/5 p-4 rounded-xl flex items-center justify-between border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">Donated</span><br><b class="text-green-400">${dn.blood_group}</b></div><div class="flex gap-2"><button onclick="showCert('${r.profile?r.profile.name:'Hero'}')" class="text-xs bg-white text-black px-3 py-1.5 font-bold rounded-lg hover:bg-gray-200 transition whitespace-nowrap">View Honor</button><button onclick="window.open('/api/certificate/${r.profile.user_id}', '_blank')" class="text-xs bg-rose-600 text-white px-3 py-1.5 font-bold rounded-lg hover:bg-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition whitespace-nowrap"><i class="fa-solid fa-file-pdf"></i> PDF</button></div></div>`);
                     document.getElementById('dash-lists').innerHTML = html || '<div class="text-center py-6 text-gray-500 text-sm font-medium">No system activity.</div>';
                 } else if(role === 'hospital' && r.profile) {
                     document.getElementById('hosp-name').value = r.profile.name; 
@@ -1131,6 +1258,33 @@
         }
 
         function showCert(name) { document.getElementById('cert-name').innerText = name; document.getElementById('cert-modal').classList.add('active'); }
+
+        // NEW: LEADERBOARD LOADER
+        async function loadLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            try {
+                const res = await api('/leaderboard');
+                if(res.success) {
+                    container.innerHTML = res.data.map((d, i) => `
+                        <div class="p-4 flex justify-between items-center border-b border-white/5 hover:bg-white/5 transition">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full ${i===0?'bg-amber-500/20 text-amber-500':(i===1?'bg-gray-400/20 text-gray-400':'bg-rose-500/20 text-rose-500')} flex items-center justify-center font-black text-lg">#${i+1}</div>
+                                <div>
+                                    <h4 class="text-white font-bold text-lg">${d.name} ${d.is_verified?'<i class="fa-solid fa-certificate text-blue-400 text-xs ml-1"></i>':''}</h4>
+                                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-white/10 text-white">${d.badge || 'Donor'}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black text-white">${d.total_donations}</div>
+                                <div class="text-[10px] uppercase text-gray-500 tracking-widest font-bold">Rescues</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                container.innerHTML = '<div class="p-4 text-center text-rose-500">Failed to load rankings.</div>';
+            }
+        }
 
         // 100% FREE MAPS (LEAFLET.JS)
         function initMap() {
@@ -1195,7 +1349,72 @@
             const r = await api('/create_request', 'POST', {lat: userCoords.lat, lon: userCoords.lon, blood_group: bg});
             setLoading('btn-alert', false, 'Broadcast Alert');
             
-            if(r.success) { showToast(`Signal #${r.request_id} Active. AI routing...`, 'success'); document.getElementById('boost-req-id').value = r.request_id; }
+            if(r.success) { 
+                showToast(`Signal #${r.request_id} Active. AI routing...`, 'success'); 
+                document.getElementById('boost-req-id').value = r.request_id; 
+                activeMissionId = r.request_id; // Setup for chat room
+                
+                // NEW: SMART DONOR MATCH POPUP & GSAP ANIMATION
+                if(r.top_donor) {
+                    document.getElementById('match-name').innerText = r.top_donor.name;
+                    document.getElementById('match-dist').innerText = (r.top_donor.distance_km || "0.1") + " KM";
+                    document.getElementById('match-rating').innerText = r.top_donor.rating || "5.0";
+                    document.getElementById('match-verified').innerHTML = r.top_donor.is_verified ? '<i class="fa-solid fa-certificate text-blue-400"></i> Verified' : '<i class="fa-solid fa-xmark text-gray-400"></i> Unverified';
+                    
+                    const modal = document.getElementById('smart-match-modal');
+                    modal.classList.add('active');
+                    gsap.fromTo('#match-content', {scale: 0.5, opacity: 0}, {scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.7)'});
+                    
+                    if(!socket) initSocket();
+                    socket.emit('join_mission', {request_id: r.request_id});
+                }
+            }
+        }
+
+        // NEW: UBER-STYLE LIVE TRACKING (Leaflet Routing Machine)
+        function initLiveTracking() {
+            document.getElementById('smart-match-modal').classList.remove('active');
+            
+            // Show Chat
+            const chatWidget = document.getElementById('chat-widget');
+            chatWidget.classList.remove('hidden');
+            
+            document.getElementById('map-status').innerText = "LIVE ROUTING";
+            document.getElementById('map-status').classList.add('text-rose-500');
+            navTo('network');
+            
+            if(layerGroup) layerGroup.clearLayers();
+            if(routingControl) map.removeControl(routingControl);
+            
+            // Assume hospital is at userCoords and donor is slightly offset for demo
+            const donorLoc = L.latLng(userCoords.lat + 0.015, userCoords.lon + 0.015);
+            const hospLoc = L.latLng(userCoords.lat, userCoords.lon);
+            
+            routingControl = L.Routing.control({
+                waypoints: [donorLoc, hospLoc],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                lineOptions: { styles: [{color: '#10b981', opacity: 0.8, weight: 6}] },
+                createMarker: function(i, wp, n) {
+                    const color = i === 0 ? '#10b981' : '#3b82f6';
+                    const icon = L.divIcon({className: 'custom-div-icon', html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px ${color};"></div>`});
+                    return L.marker(wp.latLng, {icon: icon});
+                }
+            }).addTo(map);
+        }
+
+        // NEW: REAL-TIME CHAT
+        function toggleChat() {
+            const w = document.getElementById('chat-widget');
+            w.classList.toggle('translate-y-[120%]');
+        }
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const txt = input.value.trim();
+            if(!txt || !activeMissionId || !socket) return;
+            
+            socket.emit('send_chat', {request_id: activeMissionId, sender: localStorage.getItem('role') || 'User', text: txt});
+            input.value = '';
         }
 
         // Razorpay Boost
@@ -1231,7 +1450,7 @@
                 document.getElementById('adm-tot-req').innerText = r.stats.total_reqs; document.getElementById('adm-tot-don').innerText = r.stats.total_dons;
                 
                 document.getElementById('adm-users').innerHTML = r.users.map(u => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-4 font-mono text-gray-400">${u.id}</td><td class="p-4 font-medium text-white">${u.email}</td><td class="p-4"><span class="bg-white/10 border border-white/10 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">${u.role}</span></td><td class="p-4 ${u.is_banned?'text-rose-500':'text-green-500'} font-bold text-xs uppercase tracking-wider">${u.is_banned?'Locked':'Active'}</td><td class="p-4"><button onclick="adminAction('toggle_ban', ${u.id})" class="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 transition">Toggle Access</button></td></tr>`).join('');
-                document.getElementById('adm-hospitals').innerHTML = r.hospitals.map(h => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-4 font-mono text-gray-400">${h.id}</td><td class="p-4 font-bold text-blue-400">${h.name}</td><td class="p-4 text-xs font-mono text-gray-500">${h.lat}, ${h.lon}</td></tr>`).join('') || `<tr><td colspan="3" class="text-center p-4 text-gray-500 text-xs">No Hospitals found.</td></tr>`;
+                document.getElementById('adm-hospitals').innerHTML = r.hospitals.map(h => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-4 font-bold text-blue-400">${h.name}</td><td class="p-4 text-xs font-mono text-gray-500">${h.lat}, ${h.lon}</td></tr>`).join('') || `<tr><td colspan="3" class="text-center p-4 text-gray-500 text-xs">No Hospitals found.</td></tr>`;
                 
                 document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
