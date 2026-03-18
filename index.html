@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDrop - The Modern Blood Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=visualization"></script>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#050505">
+
+    <style>
+        :root { --bg-dark: #050505; --card-bg: rgba(20, 20, 20, 0.6); --accent: #e11d48; }
+        body { background-color: var(--bg-dark); color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; scroll-behavior: smooth; }
+        
+        .bento-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s, box-shadow 0.4s; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden;}
+        .bento-card:hover { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 10px 40px rgba(225, 29, 72, 0.15); }
+        
+        .modern-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 16px; color: white; width: 100%; transition: all 0.3s; }
+        .modern-input:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: inset 0 0 0 1px var(--accent); }
+        
+        .page-section { display: none; animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+        .page-section.active { display: block; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .glow-blob { position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; animation: drift 10s ease-in-out infinite alternate; pointer-events: none;}
+        @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, -50px) scale(1.1); } }
+        
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .image-overlay { position: relative; overflow: hidden; border-radius: 1rem; }
+        .image-overlay img { transition: transform 0.5s ease; }
+        .image-overlay:hover img { transform: scale(1.05); }
+
+        #map-container { height: 500px; width: 100%; border-radius: 24px; }
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        .toast { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 16px; display: flex; align-items: flex-start; gap: 12px; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+
+        .cert-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100; align-items:center; justify-content:center; backdrop-filter: blur(10px);}
+        .cert-modal.active { display:flex; }
+        .cert-frame { background: #fdfbf7; border: 2px solid #d4af37; padding: 4px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative;}
+        .cert-inner { border: 1px solid #d4af37; padding: 40px 60px; text-align: center; position: relative;}
+        .font-serif-custom { font-family: 'Playfair Display', serif; }
+
+        .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 60; backdrop-filter: blur(15px); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .mobile-nav-overlay.active { display: flex; opacity: 1; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative" onload="initApp()">
+
+    <div class="glow-blob bg-rose-600 w-96 h-96 top-0 left-0"></div>
+    <div class="glow-blob bg-blue-600 w-80 h-80 bottom-0 right-0" style="animation-delay: -5s;"></div>
+
+    <div id="toast-container"></div>
+
+    <nav class="bento-card sticky top-4 xl:top-6 z-50 mx-4 xl:mx-auto max-w-7xl px-5 xl:px-8 py-3 flex justify-between items-center rounded-2xl xl:rounded-full shadow-xl">
+        <div class="text-xl font-bold text-white flex items-center gap-3 cursor-pointer shrink-0" onclick="navTo('home')">
+            <div class="bg-rose-600 p-2.5 rounded-full text-xs shadow-lg"><i class="fa-solid fa-droplet text-white"></i></div>
+            <span class="tracking-tight">LifeDrop</span>
+        </div>
+        
+        <div class="hidden xl:flex gap-8 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
+            <button onclick="navTo('home')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Platform</button>
+            <button onclick="navTo('network')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Network Map</button>
+            <button onclick="navTo('dashboard')" id="nav-dashboard" class="hidden hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Dashboard</button>
+            <button onclick="navTo('hospital')" id="nav-hospital" class="hidden text-blue-400 font-bold transition px-2 py-1 rounded hover:bg-blue-400/10">Hospital OS</button>
+            <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin Center</button>
+        </div>
+
+        <div class="hidden xl:flex gap-4 items-center shrink-0">
+            <button id="install-btn" class="hidden text-xs bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-full font-medium transition border border-white/10"><i class="fa-brands fa-windows mr-1"></i> Get App</button>
+            <button onclick="navTo('auth')" id="nav-login" class="bg-white text-black hover:bg-gray-200 px-7 py-2.5 rounded-full font-bold text-sm transition shadow-lg">Sign In</button>
+            <button onclick="logout()" id="nav-logout" class="hidden bg-transparent hover:bg-rose-500/10 text-rose-500 px-7 py-2.5 rounded-full font-bold text-sm transition border border-rose-500/30">Sign Out</button>
+        </div>
+
+        <button class="xl:hidden text-white p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/10" onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars text-xl px-1"></i>
+        </button>
+    </nav>
+
+    <div id="mobile-menu" class="mobile-nav-overlay">
+        <button class="absolute top-6 right-6 text-gray-400 hover:text-white" onclick="toggleMobileMenu()"><i class="fa-solid fa-xmark text-4xl"></i></button>
+        <div class="flex flex-col gap-6 text-2xl font-bold text-center text-gray-300 w-full px-8 max-w-sm mx-auto">
+            <button onclick="navToMobile('home')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Platform</button>
+            <button onclick="navToMobile('network')" class="hover:text-white transition w-full border-b border-white/10 pb-4">Network Map</button>
+            <button onclick="navToMobile('dashboard')" id="mob-nav-dashboard" class="hidden hover:text-white transition w-full border-b border-white/10 pb-4">Dashboard</button>
+            <button onclick="navToMobile('hospital')" id="mob-nav-hospital" class="hidden text-blue-400 transition w-full border-b border-white/10 pb-4">Hospital OS</button>
+            <button onclick="navToMobile('admin')" id="mob-nav-admin" class="hidden text-amber-400 transition w-full border-b border-white/10 pb-4">Admin Center</button>
+            <button onclick="navToMobile('auth')" id="mob-nav-login" class="bg-white text-black px-6 py-4 rounded-xl shadow-lg mt-4">Sign In / Register</button>
+            <button onclick="logoutMobile()" id="mob-nav-logout" class="hidden bg-rose-600 text-white px-6 py-4 rounded-xl shadow-lg mt-4">Sign Out</button>
+        </div>
+    </div>
+
+    <main class="flex-grow container mx-auto p-4 xl:mt-8">
+
+        <section id="home" class="page-section active pt-4 xl:pt-10 pb-24">
+            <div class="flex flex-col xl:flex-row items-center justify-between gap-12 xl:gap-16 max-w-7xl mx-auto">
+                <div class="flex-1 text-center xl:text-left">
+                    <div class="inline-block border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs font-bold px-3 py-1 rounded-full mb-6 uppercase tracking-wider shadow-sm">LifeDrop OS v2.0</div>
+                    <h1 class="text-4xl sm:text-5xl xl:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] text-white">
+                        The Operating System for <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-400">Humanity.</span>
+                    </h1>
+                    <p class="text-gray-400 text-base xl:text-xl mb-10 max-w-xl mx-auto xl:mx-0 font-medium leading-relaxed">Geospatial matching, AI demand prediction, and verified donor routing in milliseconds. When seconds dictate survival.</p>
+                    <div class="flex justify-center xl:justify-start gap-4">
+                        <button onclick="navTo('network')" class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-4 rounded-full font-bold text-base transition shadow-[0_0_20px_rgba(225,29,72,0.4)]">
+                            Enter Live Network <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 relative animate-float w-full max-w-lg mt-10 xl:mt-0">
+                    <div class="absolute inset-0 bg-rose-500 blur-[60px] opacity-20 rounded-full"></div>
+                    <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800" alt="Medical professional holding a blood bag" class="relative z-10 rounded-3xl border border-white/10 shadow-2xl object-cover h-[300px] xl:h-[400px] w-full">
+                </div>
+            </div>
+
+            <div class="bento-card p-6 xl:p-10 mt-20 xl:mt-32 max-w-7xl mx-auto border-blue-500/20 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 text-[200px] text-blue-500/5 rotate-12 pointer-events-none"><i class="fa-solid fa-file-medical"></i></div>
+                <div class="flex flex-col lg:flex-row gap-10 items-center relative z-10">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-4"><div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-500/30"><i class="fa-solid fa-bullseye text-blue-400 text-xl"></i></div><h3 class="font-bold text-2xl xl:text-3xl text-white">The Problem Statement</h3></div>
+                        <p class="text-gray-300 text-sm xl:text-base leading-relaxed mb-6 font-medium">Hospitals and patients often struggle to find blood donors during medical emergencies, leading to delays in treatment. Our objective is to develop a digital platform that efficiently connects blood donors, hospitals, and patients.</p>
+                        <div class="bg-black/30 p-5 rounded-xl border border-white/5">
+                            <h4 class="font-bold text-sm text-gray-400 uppercase tracking-widest mb-3">Core Features Built</h4>
+                            <ul class="text-white text-sm space-y-3 font-medium">
+                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Donor registration and comprehensive blood group database</li>
+                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Nearby blood bank locator utilizing high-precision GPS</li>
+                                <li class="flex items-start gap-3"><i class="fa-solid fa-check text-green-500 mt-0.5"></i> Instant emergency blood request alerts directly to donors</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="flex-1 w-full bg-black/50 p-4 xl:p-6 rounded-2xl border border-white/10 shadow-inner">
+                        <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800" alt="Hospitals and patients struggle to find blood donors" class="w-full h-auto rounded-xl shadow-lg opacity-90 hover:opacity-100 transition duration-500 hover:scale-[1.02]">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="network" class="page-section max-w-7xl mx-auto mt-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bento-card p-2 relative h-[400px] lg:h-auto">
+                    <div class="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 flex items-center gap-3 shadow-lg">
+                        <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                        <span class="text-xs font-bold text-white tracking-widest uppercase">Live Tracking</span>
+                    </div>
+                    <button onclick="toggleHeatmap()" class="absolute top-6 right-6 z-10 bg-black/60 backdrop-blur px-4 py-2 rounded-full border border-white/10 text-xs font-bold hover:bg-white/10 transition shadow-lg"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> Heatmap</button>
+                    <div id="map-container" class="h-full min-h-[300px] lg:min-h-[500px]">Map Loading... (API Key Required)</div>
+                </div>
+                
+                <div class="bento-card p-6 flex flex-col h-[500px] lg:h-[516px]">
+                    <h3 class="font-bold text-xl mb-6 text-white border-b border-white/10 pb-4">Command Terminal</h3>
+                    <select id="search-bg" class="modern-input mb-4 text-sm font-bold">
+                        <option value="">Select Blood Group...</option>
+                        <option value="A+">A+</option><option value="O+">O+</option><option value="B+">B+</option><option value="AB+">AB+</option>
+                        <option value="A-">A-</option><option value="O-">O-</option><option value="B-">B-</option><option value="AB-">AB-</option>
+                    </select>
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <button onclick="searchDonors()" id="btn-scan" class="bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl font-bold text-sm transition shadow">Scan Local</button>
+                        <button onclick="triggerEmergency()" id="btn-alert" class="bg-rose-600 hover:bg-rose-500 text-white p-3 rounded-xl font-bold text-sm transition shadow-[0_0_15px_rgba(225,29,72,0.3)]">Broadcast Alert</button>
+                    </div>
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Live Feed</h4>
+                    <div id="donor-results" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar border border-white/5 p-3 rounded-xl bg-black/30">
+                        <div class="flex items-center justify-center h-full text-gray-500 text-sm font-medium flex-col gap-2">
+                            <i class="fa-solid fa-satellite-dish text-2xl mb-2 opacity-50"></i>
+                            Awaiting scan command...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard" class="page-section max-w-7xl mx-auto mt-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="lg:col-span-4 bento-card p-6 lg:p-8">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <h2 id="dash-name" class="font-bold text-2xl text-white leading-tight">Profile</h2>
+                            <span id="dash-badge" class="hidden mt-1 inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/20 uppercase"><i class="fa-solid fa-certificate"></i> Verified</span>
+                        </div>
+                    </div>
+                    
+                    <form id="profile-form" class="space-y-5">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Full Name</label>
+                            <input type="text" id="prof-name" class="modern-input text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Blood Type</label>
+                            <select id="prof-bg" class="modern-input text-sm font-bold">
+                                <option value="A+">A+</option><option value="O+">O+</option><option value="B+">B+</option><option value="AB+">AB+</option>
+                                <option value="A-">A-</option><option value="O-">O-</option><option value="B-">B-</option><option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Geolocation (Lat, Lon)</label>
+                            <div class="flex gap-3 mb-3">
+                                <input type="text" id="prof-lat" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lat">
+                                <input type="text" id="prof-lon" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lon">
+                            </div>
+                            <button type="button" onclick="getLocation('prof')" class="w-full bg-white/5 hover:bg-white/10 text-white text-sm font-bold py-3 rounded-xl transition border border-white/5"><i class="fa-solid fa-satellite mr-1"></i> Sync Coordinates</button>
+                        </div>
+                        <div class="pt-2 border-t border-white/5">
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Identity Verification</label>
+                            <input type="file" id="prof-doc" class="w-full text-xs text-gray-400 file:bg-white file:text-black file:border-0 file:font-bold file:rounded-lg file:px-4 file:py-2 file:mr-3 cursor-pointer hover:file:bg-gray-200 transition">
+                        </div>
+                        <label class="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition shadow-inner">
+                            <input type="checkbox" id="prof-avail" checked class="w-5 h-5 accent-rose-500 rounded bg-gray-800">
+                            <div class="flex flex-col"><span class="text-sm font-bold text-white">Active Donor</span><span class="text-xs text-gray-400">Available for emergencies</span></div>
+                        </label>
+                        <button type="button" onclick="saveProfile()" id="btn-save-prof" class="w-full bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold transition mt-2 shadow-lg text-sm">Save Configuration</button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="grid grid-cols-2 gap-4 lg:gap-6">
+                        <div class="bento-card p-4 lg:p-6 flex flex-col justify-between h-32 lg:h-40 relative overflow-hidden">
+                            <div class="absolute -right-2 -bottom-2 text-rose-500/5 text-7xl"><i class="fa-solid fa-tower-broadcast"></i></div>
+                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 relative z-10"><i class="fa-solid fa-tower-broadcast"></i></div>
+                            <div class="relative z-10">
+                                <div id="stat-req" class="text-3xl lg:text-4xl font-black text-white mb-0.5">0</div>
+                                <div class="text-[10px] lg:text-xs font-bold text-gray-500 uppercase tracking-widest">Signals Sent</div>
+                            </div>
+                        </div>
+                        <div class="bento-card p-4 lg:p-6 flex flex-col justify-between h-32 lg:h-40 relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-green-500/10 text-8xl"><i class="fa-solid fa-heart-pulse"></i></div>
+                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 relative z-10"><i class="fa-solid fa-check"></i></div>
+                            <div class="relative z-10">
+                                <div id="stat-don" class="text-3xl lg:text-4xl font-black text-white mb-0.5">0</div>
+                                <div class="text-[10px] lg:text-xs font-bold text-green-500 uppercase tracking-widest">Lives Saved</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bento-card p-6 min-h-[250px]">
+                        <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3"><i class="fa-solid fa-clock-rotate-left text-rose-500 mr-2"></i>Activity Log</h3>
+                        <div id="dash-lists" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar"></div>
+                    </div>
+
+                    <div class="bento-card p-6 lg:p-8 bg-gradient-to-r from-gray-900 to-[#1e140a] border border-[#d4af37]/30 relative overflow-hidden shadow-2xl">
+                        <div class="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[#d4af37]/10 to-transparent pointer-events-none"></div>
+                        <div class="absolute -right-10 -bottom-10 text-[#d4af37]/5 text-[150px] pointer-events-none transform rotate-12"><i class="fa-solid fa-crown"></i></div>
+                        <div class="relative z-10 max-w-lg">
+                            <span class="bg-[#d4af37]/20 text-[#d4af37] text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest mb-3 inline-block border border-[#d4af37]/30">Premium Feature</span>
+                            <h3 class="font-bold text-2xl text-white mb-2"><i class="fa-solid fa-bolt mr-2"></i>Priority Signal Boost</h3>
+                            <p class="text-sm text-gray-400 mb-6 font-medium">Bypass algorithmic routing. Push your request to the top of all active donor feeds in your region for just ₹20.</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input type="number" id="boost-req-id" class="modern-input border-[#d4af37]/30 focus:border-[#d4af37] sm:w-48 bg-black/50" placeholder="Request ID">
+                                <button onclick="initiatePayment()" class="bg-gradient-to-r from-[#d4af37] to-[#c5a028] hover:opacity-90 text-black font-black py-3 px-6 rounded-xl transition shadow-[0_0_20px_rgba(212,175,55,0.4)] whitespace-nowrap">Pay via Razorpay</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="hospital" class="page-section max-w-7xl mx-auto mt-6">
+            <div class="bento-card p-6 lg:p-10 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+                
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-regular fa-hospital"></i></div>
+                    <div><h2 class="font-black text-2xl lg:text-3xl text-white">Hospital OS</h2><p class="text-blue-400 font-bold text-xs uppercase tracking-widest mt-1">Inventory Console</p></div>
+                </div>
+                
+                <form id="hosp-profile" class="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6 mb-12 bg-black/40 p-6 rounded-2xl border border-white/5 shadow-inner">
+                    <div class="col-span-1 md:col-span-4"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Facility Name</label><input type="text" id="hosp-name" class="modern-input"></div>
+                    <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50 bg-black/20"></div>
+                    <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50 bg-black/20"></div>
+                    <div class="col-span-1 md:col-span-1 flex items-end"><button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-3.5 rounded-xl font-bold text-sm text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Sync GPS</button></div>
+                    <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition shadow-lg">Update Facility Details</button></div>
+                </form>
+
+                <h3 class="font-bold text-lg mb-6 text-white border-b border-white/10 pb-3"><i class="fa-solid fa-boxes-stacked text-gray-400 mr-2"></i>Live Blood Units Available</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A+</label><input type="number" id="stk-A+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">A-</label><input type="number" id="stk-A-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B+</label><input type="number" id="stk-B+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">B-</label><input type="number" id="stk-B-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O+</label><input type="number" id="stk-O+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">O-</label><input type="number" id="stk-O-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB+</label><input type="number" id="stk-AB+" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                    <div class="bg-black/40 p-4 lg:p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition flex items-center justify-between"><label class="text-white font-bold text-xl">AB-</label><input type="number" id="stk-AB-" class="w-16 bg-transparent border-b border-gray-600 text-right text-2xl font-black text-blue-400 focus:outline-none focus:border-blue-400" value="0"></div>
+                </div>
+                <button onclick="saveHospitalStock()" id="btn-sync-stk" class="w-full bg-white text-black py-4 rounded-xl font-black text-lg transition hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.2)]">Sync Inventory to Global Network</button>
+            </div>
+        </section>
+
+        <section id="admin" class="page-section mt-6">
+            <div class="bento-card p-6 lg:p-8 max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-white/10 gap-4">
+                    <div><h2 class="text-3xl font-black text-amber-500 tracking-tight">Root Access</h2><p class="text-sm text-gray-400 font-medium mt-1">System-wide monitoring & moderation.</p></div>
+                    <button onclick="loadAdmin()" id="btn-adm-sync" class="w-full md:w-auto bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl text-sm font-bold text-white transition flex items-center justify-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Matrix</button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 rounded-2xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                        <i class="fa-solid fa-globe text-9xl text-amber-500/5 absolute -bottom-4 -left-4"></i>
+                        <h3 class="font-bold text-gray-400 mb-6 text-sm tracking-widest uppercase relative z-10">Network Throughput</h3>
+                        <div class="flex gap-8 relative z-10 w-full justify-center">
+                            <div><div id="adm-tot-req" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-rose-500 uppercase tracking-wide">Pings</div></div>
+                            <div><div id="adm-tot-don" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-green-500 uppercase tracking-wide">Rescues</div></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[280px]">
+                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-id-card text-blue-400"></i> KYC Queue</h3>
+                        <div id="adm-docs" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+                    </div>
+                    
+                    <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[280px]">
+                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-crown text-amber-400"></i> Boost Verifications</h3>
+                        <div id="adm-pays" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/30 rounded-2xl border border-white/5 overflow-hidden">
+                    <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">User Directory</h3></div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-sm text-left whitespace-nowrap">
+                            <thead class="bg-white/5 text-gray-400 text-xs uppercase"><tr><th class="p-4 font-bold tracking-wider">UID</th><th class="p-4 font-bold tracking-wider">Identity</th><th class="p-4 font-bold tracking-wider">Access Level</th><th class="p-4 font-bold tracking-wider">Status</th><th class="p-4 font-bold tracking-wider">Controls</th></tr></thead>
+                            <tbody id="adm-users" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="auth" class="page-section max-w-md mx-auto mt-12 lg:mt-24 relative z-10">
+            <div class="bento-card p-8 lg:p-10 text-center relative before:absolute before:inset-0 before:bg-gradient-to-b before:from-rose-500/10 before:to-transparent before:z-[-1]">
+                <div class="w-20 h-20 bg-black border border-rose-500/30 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(225,29,72,0.3)]">
+                    <i class="fa-solid fa-fingerprint text-4xl text-rose-500"></i>
+                </div>
+                <h2 class="text-2xl font-black mb-8 text-white tracking-tight">Access Portal</h2>
+                <div class="space-y-4 mb-8">
+                    <input type="email" id="auth-email" placeholder="Email Address" class="modern-input">
+                    <input type="password" id="auth-password" placeholder="Password" class="modern-input">
+                    <select id="auth-role" class="modern-input appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[position:right_16px_center]">
+                        <option value="user">Register as Donor</option>
+                        <option value="hospital">Register as Medical Facility</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <button onclick="authReq('login')" id="btn-login" class="w-full bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold transition shadow-lg flex justify-center items-center h-[52px]">Sign In</button>
+                    <button onclick="authReq('register')" id="btn-reg" class="w-full bg-transparent border border-white/20 text-white hover:bg-white/5 py-3.5 rounded-xl font-bold transition flex justify-center items-center h-[52px]">Create Account</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="pay-modal" class="cert-modal px-4">
+        <div class="bento-card p-8 max-w-md w-full relative transform transition-all border-[#d4af37]/30">
+            <button onclick="document.getElementById('pay-modal').classList.remove('active')" class="absolute top-5 right-5 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="w-12 h-12 bg-[#d4af37]/10 rounded-full flex items-center justify-center mb-4 border border-[#d4af37]/20"><i class="fa-solid fa-bolt text-[#d4af37] text-xl"></i></div>
+            <h3 class="text-2xl font-black text-white mb-2">Verify Transaction</h3>
+            <p class="text-sm text-gray-400 mb-6 leading-relaxed">Upload the screenshot of your Razorpay ₹20 payment to activate global priority routing.</p>
+            <div class="bg-black/50 border border-dashed border-white/20 rounded-xl p-4 mb-6 hover:border-[#d4af37] transition cursor-pointer relative overflow-hidden">
+                <input type="file" id="pay-screenshot" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="text-center pointer-events-none">
+                    <i class="fa-regular fa-image text-3xl text-gray-500 mb-2"></i>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-widest">Tap to select image</p>
+                </div>
+            </div>
+            <button onclick="submitPaymentProof()" id="btn-pay-proof" class="w-full bg-[#d4af37] text-black hover:bg-[#c5a028] py-3.5 rounded-xl font-black transition shadow-[0_0_15px_rgba(212,175,55,0.4)] flex justify-center items-center h-[52px]">Submit Ledger</button>
+        </div>
+    </div>
+
+    <div id="cert-modal" class="cert-modal px-2">
+        <div class="cert-frame max-w-4xl w-full relative text-center shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+            <div class="cert-inner bg-[#fdfbf7]">
+                <div class="cert-bg"></div>
+                <button onclick="document.getElementById('cert-modal').classList.remove('active')" class="absolute top-4 right-4 text-gray-400 hover:text-black z-20 transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                
+                <div class="relative z-10 py-4">
+                    <div class="flex justify-center mb-4"><i class="fa-solid fa-award text-5xl text-[#8b0000] drop-shadow-md"></i></div>
+                    <h1 class="text-3xl md:text-5xl font-serif-custom text-[#8b0000] mb-4 font-bold tracking-tight uppercase">Certificate of Honor</h1>
+                    <p class="text-gray-600 font-serif-custom italic text-lg md:text-xl mb-8">Proudly bestowed upon</p>
+                    <h2 id="cert-name" class="text-3xl md:text-5xl font-bold text-gray-900 mb-8 border-b border-[#d4af37] pb-2 inline-block px-8 md:px-16 capitalize" style="font-family: 'Plus Jakarta Sans', sans-serif;">Donor Name</h2>
+                    <p class="text-gray-800 font-serif-custom text-base md:text-lg max-w-2xl mx-auto leading-loose mb-12">In profound recognition of their selfless blood donation. Through this noble act, they have provided the invaluable gift of life, demonstrating the highest ideals of compassion and humanity.</p>
+                    
+                    <div class="flex justify-between items-end px-2 md:px-12 mt-8">
+                        <div class="text-center"><div class="border-t border-gray-400 w-24 md:w-48 pt-3 text-[10px] md:text-xs text-gray-600 font-bold uppercase tracking-widest" style="font-family: 'Plus Jakarta Sans', sans-serif;">LifeDrop Registry</div></div>
+                        <div class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center border-4 border-[#8b0000] shadow-md z-20"><i class="fa-solid fa-droplet text-2xl md:text-3xl text-[#8b0000]"></i></div>
+                        <div class="text-center"><div class="border-t border-gray-400 w-24 md:w-48 pt-3 text-[10px] md:text-xs text-gray-600 font-bold uppercase tracking-widest" style="font-family: 'Plus Jakarta Sans', sans-serif;">Official Signatory</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute -bottom-10 w-full left-0 text-center">
+                <p class="text-[10px] md:text-xs text-gray-400 tracking-wider">In partnership with <a href="https://hope-foundation-empowering-children.onrender.com/" target="_blank" class="text-white font-bold hover:underline">Hope Foundation</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "/api";
+        let userCoords = null, socket = null, map = null, heatmap = null, markers = [];
+
+        // Mobile Nav Toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('active')) {
+                menu.style.opacity = '0';
+                setTimeout(() => menu.classList.remove('active'), 300);
+            } else {
+                menu.classList.add('active');
+                setTimeout(() => menu.style.opacity = '1', 10);
+            }
+        }
+        
+        function navToMobile(sec) {
+            toggleMobileMenu();
+            navTo(sec);
+        }
+        
+        function logoutMobile() {
+            toggleMobileMenu();
+            logout();
+        }
+
+        // UI Helpers
+        function setLoading(btnId, isLoading, originalText) {
+            const btn = document.getElementById(btnId);
+            if(!btn) return;
+            if(isLoading) { btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`; } 
+            else { btn.disabled = false; btn.innerHTML = originalText; }
+        }
+
+        function showToast(msg, type='info') {
+            const t = document.createElement('div');
+            const icon = type==='error' ? '<i class="fa-solid fa-circle-exclamation text-rose-500 text-xl"></i>' : (type==='success' ? '<i class="fa-solid fa-circle-check text-green-500 text-xl"></i>' : '<i class="fa-solid fa-bell text-blue-500 text-xl"></i>');
+            t.className = 'toast';
+            t.innerHTML = `${icon}<div><b class="text-xs text-gray-400 uppercase tracking-wider block mb-0.5">${type}</b><p class="text-sm text-white font-medium">${msg}</p></div>`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => { t.style.opacity=0; setTimeout(()=>t.remove(), 400); }, 4000);
+        }
+
+        async function api(ep, method='GET', body=null, isFormData=false) {
+            const opts = { method, headers: {} };
+            const token = localStorage.getItem('token');
+            if(token) opts.headers['Authorization'] = `Bearer ${token}`;
+            if(!isFormData) { opts.headers['Content-Type'] = 'application/json'; if(body) opts.body = JSON.stringify(body); }
+            else { opts.body = body; }
+            try { 
+                const r = await fetch(API+ep, opts);
+                if(r.status === 401) { logout(); return {success: false, message: "Session expired."}; }
+                return await r.json(); 
+            } catch(e) { console.error(e); return {success:false, message:'API connectivity lost.'}; }
+        }
+
+        // Init
+        function initApp() { 
+            checkAuth(); 
+            if(localStorage.getItem('token')){ 
+                initSocket(); 
+                navTo(localStorage.getItem('role')==='hospital'?'hospital':'dashboard'); 
+            } else { navTo('home'); } 
+        }
+
+        function checkAuth() {
+            const t = localStorage.getItem('token'), r = localStorage.getItem('role');
+            // Desktop Nav
+            document.getElementById('nav-login').classList.toggle('hidden', !!t);
+            document.getElementById('nav-logout').classList.toggle('hidden', !t);
+            document.getElementById('nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
+            document.getElementById('nav-hospital').classList.toggle('hidden', r!=='hospital');
+            document.getElementById('nav-admin').classList.toggle('hidden', r!=='admin');
+            
+            // Mobile Nav
+            document.getElementById('mob-nav-login').classList.toggle('hidden', !!t);
+            document.getElementById('mob-nav-logout').classList.toggle('hidden', !t);
+            document.getElementById('mob-nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
+            document.getElementById('mob-nav-hospital').classList.toggle('hidden', r!=='hospital');
+            document.getElementById('mob-nav-admin').classList.toggle('hidden', r!=='admin');
+        }
+
+        function navTo(sec) {
+            const r = localStorage.getItem('role');
+            if(['dashboard','admin','hospital','network'].includes(sec) && !localStorage.getItem('token')) { showToast('Authentication required','error'); sec='auth'; }
+            if(sec==='admin' && r!=='admin') return showToast('Access Denied: Root access required','error');
+            if(sec==='hospital' && r!=='hospital') return showToast('Access Denied: Medical facility only','error');
+            
+            document.querySelectorAll('.page-section').forEach(e=>e.classList.remove('active'));
+            const targetEl = document.getElementById(sec);
+            if(targetEl) { targetEl.classList.add('active'); window.scrollTo(0,0); }
+            
+            if(sec==='dashboard' || sec==='hospital') loadDash(); 
+            if(sec==='admin') loadAdmin(); 
+            if(sec==='network' && !map && typeof google!=='undefined' && google.maps) initMap();
+        }
+
+        // WebSockets
+        function initSocket() {
+            if(socket) return;
+            try {
+                socket = io();
+                socket.emit('join', {user_id: localStorage.getItem('id')});
+                socket.on('auto_assign', d => {
+                    showToast(`AI MATCH: Urgent ${d.blood_group} request routed to you!`, 'error');
+                    if(document.getElementById('network').classList.contains('active')) searchDonors();
+                });
+                socket.on('request_accepted', d => { 
+                    showToast(`${d.donor_name} accepted your request!`, 'success'); 
+                    if(document.getElementById('dashboard').classList.contains('active')) loadDash(); 
+                });
+            } catch(e) {}
+        }
+
+        // Auth
+        async function authReq(act) {
+            const email = document.getElementById('auth-email').value, password = document.getElementById('auth-password').value, role = document.getElementById('auth-role').value;
+            if(!email || !password) return showToast("Credentials required", "error");
+            const btnId = act==='login'?'btn-login':'btn-reg', origTxt = act==='login'?'Sign In':'Create Account';
+            setLoading(btnId, true, origTxt);
+            const r = await api('/auth', 'POST', {action:act, email, password, role});
+            setLoading(btnId, false, origTxt);
+            showToast(r.message, r.success?'success':'error');
+            if(r.success && act==='login') {
+                localStorage.setItem('token', r.token); localStorage.setItem('role', r.role); localStorage.setItem('id', r.id);
+                checkAuth(); initSocket(); navTo(r.role==='admin'?'admin': r.role==='hospital'?'hospital':'dashboard');
+            }
+        }
+        function logout() { localStorage.clear(); if(socket) {socket.disconnect(); socket=null;} checkAuth(); navTo('home'); showToast('Session terminated','info');}
+
+        // GPS
+        function getLocation(ctx='prof') {
+            navigator.geolocation.getCurrentPosition(p => {
+                userCoords = {lat: p.coords.latitude, lon: p.coords.longitude};
+                if(ctx==='prof' || ctx==='hosp'){ 
+                    document.getElementById(ctx+'-lat').value = userCoords.lat; 
+                    document.getElementById(ctx+'-lon').value = userCoords.lon; 
+                }
+                showToast('Coordinates synchronized', 'success');
+            }, ()=>showToast('GPS access denied by browser', 'error'));
+        }
+
+        // Profile Saves
+        async function saveProfile() {
+            setLoading('btn-save-prof', true, 'Save Configuration');
+            const fd = new FormData();
+            fd.append('name', document.getElementById('prof-name').value); fd.append('blood_group', document.getElementById('prof-bg').value);
+            fd.append('lat', document.getElementById('prof-lat').value); fd.append('lon', document.getElementById('prof-lon').value);
+            fd.append('available', document.getElementById('prof-avail').checked);
+            const file = document.getElementById('prof-doc').files[0]; if(file) fd.append('document', file);
+            const r = await api('/profile/update', 'POST', fd, true);
+            setLoading('btn-save-prof', false, 'Save Configuration');
+            showToast(r.message, r.success?'success':'error'); 
+            if(r.success) loadDash();
+        }
+
+        async function saveHospitalProfile() {
+            setLoading('btn-save-hosp', true, 'Update Facility Details');
+            const fd = new FormData();
+            fd.append('name', document.getElementById('hosp-name').value); fd.append('lat', document.getElementById('hosp-lat').value); fd.append('lon', document.getElementById('hosp-lon').value);
+            const r = await api('/profile/update', 'POST', fd, true);
+            setLoading('btn-save-hosp', false, 'Update Facility Details');
+            showToast(r.message, r.success?'success':'error');
+        }
+
+        async function saveHospitalStock() {
+            setLoading('btn-sync-stk', true, 'Push Update to Global Registry');
+            const bgs = ['A+','A-','B+','B-','O+','O-','AB+','AB-']; const data = {};
+            bgs.forEach(bg => data[bg] = parseFloat(document.getElementById('stk-'+bg).value) || 0);
+            const r = await api('/hospital/stock', 'POST', data); 
+            setLoading('btn-sync-stk', false, 'Push Update to Global Registry');
+            showToast(r.message, r.success?'success':'error');
+        }
+
+        // Data Loaders
+        async function loadDash() {
+            const role = localStorage.getItem('role'); const r = await api('/dashboard');
+            if(r.success) {
+                if(role === 'user') {
+                    if(r.profile) {
+                        document.getElementById('dash-name').innerText = r.profile.name; document.getElementById('prof-name').value = r.profile.name;
+                        document.getElementById('prof-bg').value = r.profile.blood_group; document.getElementById('prof-lat').value = r.profile.lat; document.getElementById('prof-lon').value = r.profile.lon;
+                        document.getElementById('prof-avail').checked = r.profile.available; userCoords = {lat: r.profile.lat, lon: r.profile.lon};
+                        document.getElementById('dash-badge').classList.toggle('hidden', !r.profile.is_verified);
+                    }
+                    document.getElementById('stat-req').innerText = r.requests.length; document.getElementById('stat-don').innerText = r.donations.length;
+                    let html = '';
+                    r.requests.forEach(rq => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">ID: ${rq.id}</span><br><b class="text-white">${rq.blood_group}</b></div><span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-black/50 ${rq.is_priority?'text-amber-400 border border-amber-500/20':'text-gray-400'}">${rq.status} ${rq.is_priority?'<i class="fa-solid fa-crown ml-1"></i>':''}</span></div>`);
+                    r.donations.forEach(dn => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">Donated</span><br><b class="text-green-400">${dn.blood_group}</b></div><button onclick="showCert('${r.profile.name}')" class="text-xs bg-white text-black px-3 py-1.5 font-bold rounded-lg hover:bg-gray-200 transition whitespace-nowrap">View Honor</button></div>`);
+                    document.getElementById('dash-lists').innerHTML = html || '<div class="text-center py-6 text-gray-500 text-sm font-medium">No system activity.</div>';
+                } else if(role === 'hospital' && r.profile) {
+                    document.getElementById('hosp-name').value = r.profile.name; document.getElementById('hosp-lat').value = r.profile.lat; document.getElementById('hosp-lon').value = r.profile.lon; userCoords = {lat: r.profile.lat, lon: r.profile.lon};
+                    document.getElementById('stk-A+').value = r.profile.stock_ap; document.getElementById('stk-A-').value = r.profile.stock_an; document.getElementById('stk-B+').value = r.profile.stock_bp; document.getElementById('stk-B-').value = r.profile.stock_bn; document.getElementById('stk-O+').value = r.profile.stock_op; document.getElementById('stk-O-').value = r.profile.stock_on; document.getElementById('stk-AB+').value = r.profile.stock_abp; document.getElementById('stk-AB-').value = r.profile.stock_abn;
+                }
+            }
+        }
+
+        function showCert(name) { document.getElementById('cert-name').innerText = name; document.getElementById('cert-modal').classList.add('active'); }
+
+        // Maps & AI Search
+        function initMap() {
+            try {
+                map = new google.maps.Map(document.getElementById("map-container"), { center: {lat: 26.4499, lng: 80.3319}, zoom: 12, styles: [{elementType:"geometry",stylers:[{color:"#111111"}]},{elementType:"labels.text.stroke",stylers:[{color:"#111111"}]},{elementType:"labels.text.fill",stylers:[{color:"#666666"}]},{featureType:"water",stylers:[{color:"#050505"}]},{featureType:"road",stylers:[{color:"#222222"}]}], disableDefaultUI: true });
+                loadHeatmap();
+            } catch(e) { document.getElementById('map-container').innerHTML="<div class='flex items-center justify-center h-full text-xs font-mono text-gray-500'>[MAPS_API_KEY_MISSING]</div>"; }
+        }
+
+        async function loadHeatmap() {
+            if(!map) return;
+            const r = await api('/demand_heatmap');
+            if(r.success && r.data.length && typeof google.maps.visualization !== 'undefined') {
+                const heatData = r.data.map(d => ({location: new google.maps.LatLng(d.lat, d.lon), weight: d.weight}));
+                heatmap = new google.maps.visualization.HeatmapLayer({ data: heatData, map: null, radius: 45, gradient: ['rgba(0,0,0,0)','rgba(225,29,72,0.1)','rgba(225,29,72,0.4)','rgba(225,29,72,0.8)'] });
+            }
+        }
+        function toggleHeatmap() { if(heatmap) heatmap.setMap(heatmap.getMap() ? null : map); }
+
+        async function searchDonors() {
+            if(!userCoords) return showToast('Location sync required','error');
+            const bg = document.getElementById('search-bg').value; if(!bg) return showToast('Specify blood type','error');
+            
+            setLoading('btn-scan', true, '');
+            const r = await api('/find_donors', 'POST', {lat: userCoords.lat, lon: userCoords.lon, blood_group: bg});
+            setLoading('btn-scan', false, 'Scan Local');
+            
+            if(r.success) {
+                markers.forEach(m => {if(m.setMap) m.setMap(null);}); markers = []; let html = '';
+                r.data.forEach((d,i) => {
+                    const isHosp = d.type === 'hospital';
+                    html += `<div class="bg-black/40 p-4 rounded-xl flex justify-between items-center border border-white/5 ${i===0?'border-l-4 border-l-green-500 bg-green-500/5':''} transition"><div><b class="text-white text-sm">${isHosp? '<i class="fa-solid fa-hospital text-blue-500 mr-1"></i> ':'<i class="fa-solid fa-user text-rose-500 mr-1"></i> '} ${d.name}</b> ${d.is_verified?'<i class="fa-solid fa-certificate text-blue-400 text-xs ml-1"></i>':''}<br><span class="text-xs text-gray-500 font-mono mt-1 block">${d.distance_km} KM RAD</span></div><span class="text-white font-black bg-white/10 border border-white/10 px-3 py-1 rounded text-xs">${bg}</span></div>`;
+                    if(map && d.lat && d.lon) {
+                        const m = new google.maps.Marker({position: {lat: d.lat, lng: d.lon}, map: map, icon: {path: isHosp? google.maps.SymbolPath.BACKWARD_CLOSED_ARROW : google.maps.SymbolPath.CIRCLE, scale: isHosp?5:6, fillColor: isHosp?"#3b82f6":"#10b981", fillOpacity: 1, strokeWeight: 2, strokeColor: "#050505"}});
+                        markers.push(m);
+                    }
+                });
+                document.getElementById('donor-results').innerHTML = html || '<div class="text-center py-6 text-gray-500 text-xs font-mono uppercase">0 matches found. Use Broadcast.</div>';
+                if(map) map.setCenter({lat: userCoords.lat, lng: userCoords.lon});
+            }
+        }
+
+        async function triggerEmergency() {
+            if(!userCoords) return showToast('Location sync required','error');
+            const bg = document.getElementById('search-bg').value; if(!bg) return showToast('Specify blood type','error');
+            
+            setLoading('btn-alert', true, '');
+            const r = await api('/create_request', 'POST', {lat: userCoords.lat, lon: userCoords.lon, blood_group: bg});
+            setLoading('btn-alert', false, 'Broadcast Alert');
+            
+            if(r.success) { showToast(`Signal #${r.request_id} Active. AI routing...`, 'success'); document.getElementById('boost-req-id').value = r.request_id; }
+        }
+
+        // Razorpay Boost
+        let currentBoostReqId = null;
+        function initiatePayment() {
+            const reqId = document.getElementById('boost-req-id').value; if(!reqId) return showToast('Input Request ID','error');
+            currentBoostReqId = reqId; window.open('https://razorpay.me/@byashish', '_blank'); document.getElementById('pay-modal').classList.add('active');
+        }
+
+        async function submitPaymentProof() {
+            const file = document.getElementById('pay-screenshot').files[0]; if(!file) return showToast('Attach ledger screenshot','error');
+            setLoading('btn-pay-proof', true, '');
+            const fd = new FormData(); fd.append('screenshot', file); fd.append('request_id', currentBoostReqId);
+            const r = await api('/payment/priority', 'POST', fd, true);
+            setLoading('btn-pay-proof', false, 'Submit Ledger');
+            showToast(r.message, r.success?'success':'error'); if(r.success) document.getElementById('pay-modal').classList.remove('active');
+        }
+
+        // Power Admin
+        async function loadAdmin() {
+            setLoading('btn-adm-sync', true, '<span class="spinner"></span>');
+            const r = await api('/admin/data');
+            setLoading('btn-adm-sync', false, '<i class="fa-solid fa-rotate"></i> Sync Data');
+            if(r.success) {
+                document.getElementById('adm-tot-req').innerText = r.stats.total_reqs; document.getElementById('adm-tot-don').innerText = r.stats.total_dons;
+                
+                document.getElementById('adm-users').innerHTML = r.users.map(u => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-3 md:p-4 font-mono text-gray-400">${u.id}</td><td class="p-3 md:p-4 font-medium text-white">${u.email}</td><td class="p-3 md:p-4"><span class="bg-white/10 border border-white/10 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">${u.role}</span></td><td class="p-3 md:p-4 ${u.is_banned?'text-rose-500':'text-green-500'} font-bold text-xs uppercase tracking-wider">${u.is_banned?'Locked':'Active'}</td><td class="p-3 md:p-4"><button onclick="adminAction('toggle_ban', ${u.id})" class="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 transition">Toggle Access</button></td></tr>`).join('');
+                
+                document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
+                
+                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="flex gap-2"><a href="/uploads/${p.screenshot_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect Ledger</a><button onclick="adminAction('approve_payment', ${p.id})" class="flex-1 bg-[#d4af37] text-black py-2.5 rounded-lg text-xs font-bold hover:bg-[#c5a028] transition">Verify Boost</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
+                
+                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.email}</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
+            }
+        }
+
+        async function adminAction(act, id) {
+            const r = await api('/admin/action', 'POST', {action: act, target_id: id});
+            if(r.success) { showToast('Execution successful','success'); loadAdmin(); }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+Flask==3.0.3
+Flask-Cors==4.0.0
+PyJWT==2.8.0
+Flask-SocketIO==5.3.6
+psycopg2-binary==2.9.9
+Werkzeug==3.0.1
+eventlet==0.35.2
+gunicorn==21.2.0
