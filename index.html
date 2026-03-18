@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=visualization"></script>
-    
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <link rel="manifest" href="/manifest.json">
@@ -22,11 +21,9 @@
         :root { --bg-dark: #050505; --card-bg: rgba(20, 20, 20, 0.6); --accent: #e11d48; }
         body { background-color: var(--bg-dark); color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; scroll-behavior: smooth; }
         
-        /* Premium Glassmorphism & Bento Grid */
-        .bento-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s, box-shadow 0.4s; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden;}
+        .bento-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.4s, border-color 0.4s, box-shadow 0.4s; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden;}
         .bento-card:hover { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 10px 40px rgba(225, 29, 72, 0.15); }
         
-        /* Custom Inputs */
         .modern-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 16px; color: white; width: 100%; transition: all 0.3s; }
         .modern-input:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: inset 0 0 0 1px var(--accent); }
         
@@ -34,36 +31,38 @@
         .page-section.active { display: block; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
         
-        /* Loader Spinner */
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Ambient Background Glows */
         .glow-blob { position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; animation: drift 10s ease-in-out infinite alternate; pointer-events: none;}
         @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, -50px) scale(1.1); } }
         
-        /* Image Animations */
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
-        .image-overlay { position: relative; overflow: hidden; border-radius: 1rem; }
-        .image-overlay img { transition: transform 0.5s ease; }
-        .image-overlay:hover img { transform: scale(1.05); }
 
         #map-container { height: 500px; width: 100%; border-radius: 24px; }
         #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 16px; display: flex; align-items: flex-start; gap: 12px; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
 
-        /* Certificate Styling */
         .cert-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100; align-items:center; justify-content:center; backdrop-filter: blur(10px);}
         .cert-modal.active { display:flex; }
         .cert-frame { background: #fdfbf7; border: 2px solid #d4af37; padding: 4px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative;}
         .cert-inner { border: 1px solid #d4af37; padding: 40px 60px; text-align: center; position: relative;}
         .font-serif-custom { font-family: 'Playfair Display', serif; }
 
-        /* Mobile Nav */
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 60; backdrop-filter: blur(15px); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
+
+        /* Admin Tabs */
+        .admin-tab { cursor: pointer; padding: 10px 20px; border-bottom: 2px solid transparent; transition: all 0.3s; font-weight: bold; color: gray; }
+        .admin-tab.active { border-bottom: 2px solid #f59e0b; color: white; }
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; animation: fadeUp 0.4s ease forwards; }
+
+        /* Auth Tabs */
+        .auth-panel { display: none; animation: fadeUp 0.4s forwards; }
+        .auth-panel.active { display: block; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative" onload="initApp()">
@@ -73,13 +72,13 @@
 
     <div id="toast-container"></div>
 
-    <nav class="bento-card sticky top-4 xl:top-6 z-50 mx-4 xl:mx-auto max-w-7xl px-4 py-3 flex justify-between items-center rounded-2xl xl:rounded-full shadow-xl">
-        <div class="text-lg xl:text-xl font-bold text-white flex items-center gap-2 cursor-pointer shrink-0" onclick="navTo('home')">
-            <div class="bg-rose-600 p-2 rounded-full text-xs shadow-lg"><i class="fa-solid fa-droplet text-white"></i></div>
-            <span class="tracking-tight hidden sm:block">LifeDrop</span>
+    <nav class="bento-card sticky top-4 xl:top-6 z-50 mx-4 xl:mx-auto max-w-7xl px-5 xl:px-8 py-3 flex justify-between items-center rounded-2xl xl:rounded-full shadow-xl">
+        <div class="text-xl font-bold text-white flex items-center gap-3 cursor-pointer shrink-0" onclick="navTo('home')">
+            <div class="bg-rose-600 p-2.5 rounded-full text-xs shadow-lg"><i class="fa-solid fa-droplet text-white"></i></div>
+            <span class="tracking-tight">LifeDrop</span>
         </div>
         
-        <div class="hidden lg:flex gap-4 font-medium text-xs xl:text-sm text-gray-300 whitespace-nowrap items-center flex-1 justify-center">
+        <div class="hidden xl:flex gap-8 font-medium text-sm text-gray-300 whitespace-nowrap items-center">
             <button onclick="navTo('home')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Platform</button>
             <button onclick="navTo('network')" class="hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Network Map</button>
             <button onclick="navTo('dashboard')" id="nav-dashboard" class="hidden hover:text-white transition px-2 py-1 rounded hover:bg-white/5">Dashboard</button>
@@ -87,14 +86,14 @@
             <button onclick="navTo('admin')" id="nav-admin" class="hidden text-amber-400 font-bold transition px-2 py-1 rounded hover:bg-amber-400/10">Admin Center</button>
         </div>
 
-        <div class="hidden lg:flex gap-3 items-center shrink-0">
-            <button id="install-btn" class="hidden text-xs bg-white/5 hover:bg-white/10 text-white px-3 py-2 rounded-full font-medium transition border border-white/10"><i class="fa-brands fa-windows mr-1"></i> App</button>
-            <button onclick="navTo('auth')" id="nav-login" class="bg-white text-black hover:bg-gray-200 px-5 py-2 rounded-full font-bold text-xs xl:text-sm transition shadow-lg">Sign In</button>
-            <button onclick="logout()" id="nav-logout" class="hidden bg-transparent hover:bg-rose-500/10 text-rose-500 px-5 py-2 rounded-full font-bold text-xs xl:text-sm transition border border-rose-500/30">Sign Out</button>
+        <div class="hidden xl:flex gap-4 items-center shrink-0">
+            <button id="install-btn" class="hidden text-xs bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-full font-medium transition border border-white/10"><i class="fa-brands fa-windows mr-1"></i> Get App</button>
+            <button onclick="navTo('auth')" id="nav-login" class="bg-white text-black hover:bg-gray-200 px-7 py-2.5 rounded-full font-bold text-sm transition shadow-lg">Sign In</button>
+            <button onclick="logout()" id="nav-logout" class="hidden bg-transparent hover:bg-rose-500/10 text-rose-500 px-7 py-2.5 rounded-full font-bold text-sm transition border border-rose-500/30">Sign Out</button>
         </div>
 
-        <button class="lg:hidden text-white p-2 rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/10 shrink-0" onclick="toggleMobileMenu()">
-            <i class="fa-solid fa-bars text-lg px-1"></i>
+        <button class="xl:hidden text-white p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/10" onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars text-xl px-1"></i>
         </button>
     </nav>
 
@@ -192,15 +191,15 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 <div class="lg:col-span-4 bento-card p-6 lg:p-8">
-                    <div class="flex items-center gap-4 mb-8">
+                    <div class="flex items-center gap-4 mb-6">
                         <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-orange-400 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg border border-white/20"><i class="fa-solid fa-user"></i></div>
                         <div>
-                            <h2 id="dash-name" class="font-bold text-2xl text-white leading-tight">Profile</h2>
+                            <h2 id="dash-name" class="font-bold text-2xl text-white leading-tight">My Profile</h2>
                             <span id="dash-badge" class="hidden mt-1 inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-500/20 uppercase"><i class="fa-solid fa-certificate"></i> Verified</span>
                         </div>
                     </div>
                     
-                    <form id="profile-form" class="space-y-5">
+                    <form id="profile-form" class="space-y-4">
                         <div>
                             <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Full Name</label>
                             <input type="text" id="prof-name" class="modern-input text-sm">
@@ -218,7 +217,6 @@
                                 <input type="text" id="prof-lat" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lat">
                                 <input type="text" id="prof-lon" class="modern-input text-sm opacity-50 pointer-events-none" placeholder="Lon">
                             </div>
-                            
                             <div class="grid grid-cols-2 gap-2">
                                 <button type="button" onclick="getLocation('prof')" class="bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-2.5 rounded-lg transition border border-white/5"><i class="fa-solid fa-location-crosshairs mr-1"></i> Auto GPS</button>
                                 <button type="button" onclick="openMapPicker('prof')" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-xs font-bold py-2.5 rounded-lg transition border border-blue-500/20"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin on Map</button>
@@ -237,20 +235,28 @@
                 </div>
 
                 <div class="lg:col-span-8 space-y-6">
-                    <div class="grid grid-cols-2 gap-4 lg:gap-6">
-                        <div class="bento-card p-4 lg:p-6 flex flex-col justify-between h-32 lg:h-40 relative overflow-hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bento-card p-6 flex flex-col justify-between h-40 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden">
+                            <div class="absolute right-0 top-0 text-white/5 text-8xl -mt-4 -mr-4"><i class="fa-solid fa-calendar-check"></i></div>
+                            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Eligibility Status</h3>
+                            <div id="eligibility-status" class="relative z-10">
+                                <div class="text-2xl font-black text-green-400 mb-1">Ready to Donate</div>
+                                <div class="text-xs text-gray-400">You are eligible to save a life today.</div>
+                            </div>
+                        </div>
+                        <div class="bento-card p-6 flex flex-col justify-between h-40 relative overflow-hidden">
                             <div class="absolute -right-2 -bottom-2 text-rose-500/5 text-7xl"><i class="fa-solid fa-tower-broadcast"></i></div>
-                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 relative z-10"><i class="fa-solid fa-tower-broadcast"></i></div>
+                            <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 relative z-10"><i class="fa-solid fa-tower-broadcast"></i></div>
                             <div class="relative z-10">
-                                <div id="stat-req" class="text-3xl lg:text-4xl font-black text-white mb-0.5">0</div>
+                                <div id="stat-req" class="text-4xl font-black text-white mb-0.5">0</div>
                                 <div class="text-[10px] lg:text-xs font-bold text-gray-500 uppercase tracking-widest">Signals Sent</div>
                             </div>
                         </div>
-                        <div class="bento-card p-4 lg:p-6 flex flex-col justify-between h-32 lg:h-40 relative overflow-hidden">
+                        <div class="bento-card p-6 flex flex-col justify-between h-40 relative overflow-hidden">
                             <div class="absolute -right-4 -bottom-4 text-green-500/10 text-8xl"><i class="fa-solid fa-heart-pulse"></i></div>
-                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 relative z-10"><i class="fa-solid fa-check"></i></div>
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 relative z-10"><i class="fa-solid fa-check"></i></div>
                             <div class="relative z-10">
-                                <div id="stat-don" class="text-3xl lg:text-4xl font-black text-white mb-0.5">0</div>
+                                <div id="stat-don" class="text-4xl font-black text-white mb-0.5">0</div>
                                 <div class="text-[10px] lg:text-xs font-bold text-green-500 uppercase tracking-widest">Lives Saved</div>
                             </div>
                         </div>
@@ -292,7 +298,7 @@
                     <div class="col-span-1 md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Latitude</label><input type="text" id="hosp-lat" class="modern-input opacity-50 bg-black/20"></div>
                     <div class="col-span-1 md:col-span-1"><label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Longitude</label><input type="text" id="hosp-lon" class="modern-input opacity-50 bg-black/20"></div>
                     <div class="col-span-1 md:col-span-1 flex flex-col justify-end gap-2">
-                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-lg font-bold text-xs text-white transition"><i class="fa-solid fa-location-crosshairs mr-1"></i> Auto GPS</button>
+                        <button type="button" onclick="getLocation('hosp')" class="w-full bg-white/10 hover:bg-white/20 py-2 rounded-lg font-bold text-xs text-white transition"><i class="fa-solid fa-satellite mr-1"></i> Auto GPS</button>
                         <button type="button" onclick="openMapPicker('hosp')" class="w-full bg-blue-600/20 hover:bg-blue-600/40 py-2 rounded-lg font-bold text-xs text-blue-400 transition border border-blue-500/20"><i class="fa-solid fa-map-location-dot mr-1"></i> Pin Map</button>
                     </div>
                     <div class="col-span-1 md:col-span-4 mt-2"><button type="button" onclick="saveHospitalProfile()" id="btn-save-hosp" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-bold text-white transition shadow-lg">Update Facility Details</button></div>
@@ -315,61 +321,112 @@
 
         <section id="admin" class="page-section mt-6">
             <div class="bento-card p-6 lg:p-8 max-w-7xl mx-auto">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-white/10 gap-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-white/10 gap-4">
                     <div><h2 class="text-3xl font-black text-amber-500 tracking-tight">Root Access</h2><p class="text-sm text-gray-400 font-medium mt-1">System-wide monitoring & moderation.</p></div>
                     <button onclick="loadAdmin()" id="btn-adm-sync" class="w-full md:w-auto bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl text-sm font-bold text-white transition flex items-center justify-center gap-2 border border-white/5"><i class="fa-solid fa-rotate"></i> Sync Matrix</button>
                 </div>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 rounded-2xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <i class="fa-solid fa-globe text-9xl text-amber-500/5 absolute -bottom-4 -left-4"></i>
-                        <h3 class="font-bold text-gray-400 mb-6 text-sm tracking-widest uppercase relative z-10">Network Throughput</h3>
-                        <div class="flex gap-8 relative z-10 w-full justify-center">
-                            <div><div id="adm-tot-req" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-rose-500 uppercase tracking-wide">Pings</div></div>
-                            <div><div id="adm-tot-don" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-green-500 uppercase tracking-wide">Rescues</div></div>
+                <div class="flex overflow-x-auto gap-2 mb-8 border-b border-white/10 pb-1">
+                    <button class="admin-tab active" onclick="switchAdminTab('adm-overview', this)">Overview</button>
+                    <button class="admin-tab" onclick="switchAdminTab('adm-users-tab', this)">Users & Hospitals</button>
+                    <button class="admin-tab" onclick="switchAdminTab('adm-actions-tab', this)">KYC & Boosts</button>
+                    <button class="admin-tab" onclick="switchAdminTab('adm-support-tab', this)">Support Tickets</button>
+                </div>
+
+                <div id="adm-overview" class="admin-panel active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 rounded-2xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                            <i class="fa-solid fa-globe text-9xl text-amber-500/5 absolute -bottom-4 -left-4"></i>
+                            <h3 class="font-bold text-gray-400 mb-6 text-sm tracking-widest uppercase relative z-10">Network Throughput</h3>
+                            <div class="flex gap-8 relative z-10 w-full justify-center">
+                                <div><div id="adm-tot-req" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-rose-500 uppercase tracking-wide">Pings</div></div>
+                                <div><div id="adm-tot-don" class="text-4xl md:text-5xl font-black text-white mb-2">0</div><div class="text-xs font-bold text-green-500 uppercase tracking-wide">Rescues</div></div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[280px]">
-                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-id-card text-blue-400"></i> KYC Queue</h3>
-                        <div id="adm-docs" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
-                    </div>
-                    
-                    <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[280px]">
-                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-crown text-amber-400"></i> Successful Boosts</h3>
-                        <div id="adm-pays" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+                        
+                        <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col justify-center">
+                            <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2"><i class="fa-solid fa-bullhorn text-rose-500"></i> Global Broadcast Alert</h3>
+                            <p class="text-xs text-gray-400 mb-4">Send an instant emergency notification to all currently active users on the network.</p>
+                            <textarea id="adm-broadcast-msg" class="modern-input mb-3 text-sm" rows="3" placeholder="Enter critical alert message..."></textarea>
+                            <button onclick="sendGlobalBroadcast()" class="bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-bold transition shadow-lg text-sm">Send Broadcast via Socket.IO</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-black/30 rounded-2xl border border-white/5 overflow-hidden">
-                    <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">User Directory</h3></div>
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="w-full text-sm text-left whitespace-nowrap">
-                            <thead class="bg-white/5 text-gray-400 text-xs uppercase"><tr><th class="p-4 font-bold tracking-wider">UID</th><th class="p-4 font-bold tracking-wider">Identity</th><th class="p-4 font-bold tracking-wider">Access Level</th><th class="p-4 font-bold tracking-wider">Status</th><th class="p-4 font-bold tracking-wider">Controls</th></tr></thead>
-                            <tbody id="adm-users" class="divide-y divide-white/5"></tbody>
-                        </table>
+                <div id="adm-actions-tab" class="admin-panel">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[400px]">
+                            <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-id-card text-blue-400"></i> KYC Queue</h3>
+                            <div id="adm-docs" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+                        </div>
+                        <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[400px]">
+                            <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-crown text-amber-400"></i> Boost Verifications</h3>
+                            <div id="adm-pays" class="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adm-users-tab" class="admin-panel">
+                    <div class="bg-black/30 rounded-2xl border border-white/5 overflow-hidden mb-6">
+                        <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">User Directory</h3></div>
+                        <div class="overflow-x-auto custom-scrollbar max-h-[300px]">
+                            <table class="w-full text-sm text-left whitespace-nowrap">
+                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0"><tr><th class="p-4 font-bold tracking-wider">UID</th><th class="p-4 font-bold tracking-wider">Identity</th><th class="p-4 font-bold tracking-wider">Access Level</th><th class="p-4 font-bold tracking-wider">Status</th><th class="p-4 font-bold tracking-wider">Controls</th></tr></thead>
+                                <tbody id="adm-users" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-black/30 rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-5 border-b border-white/5"><h3 class="font-bold text-white text-sm tracking-wider uppercase">Registered Hospitals</h3></div>
+                        <div class="overflow-x-auto custom-scrollbar max-h-[300px]">
+                            <table class="w-full text-sm text-left whitespace-nowrap">
+                                <thead class="bg-white/5 text-gray-400 text-xs uppercase sticky top-0"><tr><th class="p-4 font-bold">UID</th><th class="p-4 font-bold">Facility Name</th><th class="p-4 font-bold">Coordinates</th></tr></thead>
+                                <tbody id="adm-hospitals" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adm-support-tab" class="admin-panel">
+                    <div class="bg-black/30 rounded-2xl border border-white/5 p-6 flex flex-col h-[500px]">
+                        <h3 class="font-bold mb-4 text-white text-sm tracking-wider uppercase flex items-center gap-2 border-b border-white/5 pb-3"><i class="fa-solid fa-headset text-indigo-400"></i> Support Tickets</h3>
+                        <div id="adm-enqs" class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-2 custom-scrollbar"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="auth" class="page-section max-w-md mx-auto mt-12 lg:mt-24 relative z-10">
-            <div class="bento-card p-8 lg:p-10 text-center relative before:absolute before:inset-0 before:bg-gradient-to-b before:from-rose-500/10 before:to-transparent before:z-[-1]">
-                <div class="w-20 h-20 bg-black border border-rose-500/30 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(225,29,72,0.3)]">
-                    <i class="fa-solid fa-fingerprint text-4xl text-rose-500"></i>
+        <section id="auth" class="page-section max-w-md mx-auto mt-12 lg:mt-20 relative z-10">
+            <div class="bento-card p-8 lg:p-10 relative before:absolute before:inset-0 before:bg-gradient-to-b before:from-rose-500/10 before:to-transparent before:z-[-1]">
+                <div class="w-16 h-16 bg-black border border-rose-500/30 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(225,29,72,0.3)]">
+                    <i class="fa-solid fa-fingerprint text-3xl text-rose-500"></i>
                 </div>
-                <h2 class="text-2xl font-black mb-8 text-white tracking-tight">Access Portal</h2>
-                <div class="space-y-4 mb-8">
-                    <input type="email" id="auth-email" placeholder="Email Address" class="modern-input">
-                    <input type="password" id="auth-password" placeholder="Password" class="modern-input">
-                    <select id="auth-role" class="modern-input appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[position:right_16px_center]">
-                        <option value="user">Register as Donor</option>
-                        <option value="hospital">Register as Medical Facility</option>
-                    </select>
+                
+                <div class="flex bg-black/50 p-1 rounded-xl mb-8 border border-white/10">
+                    <button class="flex-1 py-2 text-sm font-bold rounded-lg transition" id="tab-login" style="background: white; color: black;" onclick="switchAuthTab('login')">Sign In</button>
+                    <button class="flex-1 py-2 text-sm font-bold rounded-lg transition" id="tab-register" style="color: gray;" onclick="switchAuthTab('register')">Sign Up</button>
                 </div>
-                <div class="flex flex-col gap-3">
+
+                <div id="form-login" class="auth-panel active text-center">
+                    <h2 class="text-2xl font-black mb-6 text-white tracking-tight">Welcome Back</h2>
+                    <div class="space-y-4 mb-6">
+                        <input type="email" id="login-email" placeholder="Email Address" class="modern-input">
+                        <input type="password" id="login-password" placeholder="Password" class="modern-input">
+                    </div>
                     <button onclick="authReq('login')" id="btn-login" class="w-full bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold transition shadow-lg flex justify-center items-center h-[52px]">Sign In</button>
-                    <button onclick="authReq('register')" id="btn-reg" class="w-full bg-transparent border border-white/20 text-white hover:bg-white/5 py-3.5 rounded-xl font-bold transition flex justify-center items-center h-[52px]">Create Account</button>
+                </div>
+
+                <div id="form-register" class="auth-panel text-center">
+                    <h2 class="text-2xl font-black mb-6 text-white tracking-tight">Create Account</h2>
+                    <div class="space-y-4 mb-6">
+                        <input type="email" id="reg-email" placeholder="Email Address" class="modern-input">
+                        <input type="password" id="reg-password" placeholder="Create Password" class="modern-input">
+                        <select id="reg-role" class="modern-input appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[position:right_16px_center]">
+                            <option value="user">Join as Donor</option>
+                            <option value="hospital">Join as Medical Facility</option>
+                        </select>
+                    </div>
+                    <button onclick="authReq('register')" id="btn-reg" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-xl font-bold transition shadow-[0_0_15px_rgba(225,29,72,0.4)] flex justify-center items-center h-[52px]">Register Now</button>
                 </div>
             </div>
         </section>
@@ -386,6 +443,32 @@
                 <button onclick="closeMapPicker()" class="px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition">Cancel</button>
                 <button onclick="confirmPinnedLocation()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition shadow-[0_0_15px_rgba(59,130,246,0.4)]">Confirm Coordinates</button>
             </div>
+        </div>
+    </div>
+
+    <div id="broadcast-modal" class="cert-modal px-4 z-[10000]">
+        <div class="bento-card p-8 max-w-md w-full relative border-rose-500/50 bg-rose-950/40 transform scale-95 transition-all" id="broadcast-content">
+            <div class="absolute -right-4 -top-4 text-rose-500/20 text-9xl animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 class="text-2xl font-black text-rose-500 mb-4 relative z-10"><i class="fa-solid fa-tower-broadcast mr-2"></i> EMERGENCY ALERT</h3>
+            <p id="broadcast-text" class="text-lg text-white font-medium mb-6 relative z-10 leading-relaxed"></p>
+            <button onclick="document.getElementById('broadcast-modal').classList.remove('active')" class="w-full bg-white text-black py-3 rounded-xl font-bold relative z-10">I Understand</button>
+        </div>
+    </div>
+
+    <div id="pay-modal" class="cert-modal px-4">
+        <div class="bento-card p-8 max-w-md w-full relative transform transition-all border-[#d4af37]/30">
+            <button onclick="document.getElementById('pay-modal').classList.remove('active')" class="absolute top-5 right-5 text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="w-12 h-12 bg-[#d4af37]/10 rounded-full flex items-center justify-center mb-4 border border-[#d4af37]/20"><i class="fa-solid fa-bolt text-[#d4af37] text-xl"></i></div>
+            <h3 class="text-2xl font-black text-white mb-2">Verify Transaction</h3>
+            <p class="text-sm text-gray-400 mb-6 leading-relaxed">Upload the screenshot of your Razorpay ₹20 payment to activate global priority routing.</p>
+            <div class="bg-black/50 border border-dashed border-white/20 rounded-xl p-4 mb-6 hover:border-[#d4af37] transition cursor-pointer relative overflow-hidden">
+                <input type="file" id="pay-screenshot" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="text-center pointer-events-none">
+                    <i class="fa-regular fa-image text-3xl text-gray-500 mb-2"></i>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-widest">Tap to select image</p>
+                </div>
+            </div>
+            <button onclick="submitPaymentProof()" id="btn-pay-proof" class="w-full bg-[#d4af37] text-black hover:bg-[#c5a028] py-3.5 rounded-xl font-black transition shadow-[0_0_15px_rgba(212,175,55,0.4)] flex justify-center items-center h-[52px]">Submit Ledger</button>
         </div>
     </div>
 
@@ -419,21 +502,41 @@
         const API = "/api";
         let userCoords = null, socket = null, map = null, heatmap = null, markers = [];
 
+        // Auth Tabs Logic
+        function switchAuthTab(tab) {
+            document.getElementById('form-login').classList.remove('active');
+            document.getElementById('form-register').classList.remove('active');
+            document.getElementById('tab-login').style.background = 'transparent';
+            document.getElementById('tab-login').style.color = 'gray';
+            document.getElementById('tab-register').style.background = 'transparent';
+            document.getElementById('tab-register').style.color = 'gray';
+            
+            document.getElementById('form-'+tab).classList.add('active');
+            document.getElementById('tab-'+tab).style.background = 'white';
+            document.getElementById('tab-'+tab).style.color = 'black';
+        }
+
+        // Admin Tabs Logic
+        function switchAdminTab(panelId, btn) {
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            btn.classList.add('active');
+        }
+
         // Mobile Nav Toggle
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
             if (menu.classList.contains('active')) {
-                menu.style.opacity = '0';
-                setTimeout(() => menu.classList.remove('active'), 300);
+                menu.style.opacity = '0'; setTimeout(() => menu.classList.remove('active'), 300);
             } else {
-                menu.classList.add('active');
-                setTimeout(() => menu.style.opacity = '1', 10);
+                menu.classList.add('active'); setTimeout(() => menu.style.opacity = '1', 10);
             }
         }
-        
         function navToMobile(sec) { toggleMobileMenu(); navTo(sec); }
         function logoutMobile() { toggleMobileMenu(); logout(); }
 
+        // UI Helpers
         function setLoading(btnId, isLoading, originalText) {
             const btn = document.getElementById(btnId);
             if(!btn) return;
@@ -460,7 +563,7 @@
                 const r = await fetch(API+ep, opts);
                 if(r.status === 401) { logout(); return {success: false, message: "Session expired."}; }
                 return await r.json(); 
-            } catch(e) { console.error(e); return {success:false, message:'API connectivity lost.'}; }
+            } catch(e) { return {success:false, message:'API connectivity lost.'}; }
         }
 
         // Init
@@ -474,14 +577,12 @@
 
         function checkAuth() {
             const t = localStorage.getItem('token'), r = localStorage.getItem('role');
-            // Desktop Nav
             document.getElementById('nav-login').classList.toggle('hidden', !!t);
             document.getElementById('nav-logout').classList.toggle('hidden', !t);
             document.getElementById('nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
             document.getElementById('nav-hospital').classList.toggle('hidden', r!=='hospital');
             document.getElementById('nav-admin').classList.toggle('hidden', r!=='admin');
             
-            // Mobile Nav
             document.getElementById('mob-nav-login').classList.toggle('hidden', !!t);
             document.getElementById('mob-nav-logout').classList.toggle('hidden', !t);
             document.getElementById('mob-nav-dashboard').classList.toggle('hidden', !t || r==='hospital');
@@ -491,7 +592,7 @@
 
         function navTo(sec) {
             const r = localStorage.getItem('role');
-            if(['dashboard','admin','hospital','network'].includes(sec) && !localStorage.getItem('token')) { showToast('Authentication required','error'); sec='auth'; }
+            if(['dashboard','admin','hospital','network'].includes(sec) && !localStorage.getItem('token')) { showToast('Authentication required','error'); sec='auth'; switchAuthTab('login'); }
             if(sec==='admin' && r!=='admin') return showToast('Access Denied: Root access required','error');
             if(sec==='hospital' && r!=='hospital') return showToast('Access Denied: Medical facility only','error');
             
@@ -518,39 +619,56 @@
                     showToast(`${d.donor_name} accepted your request!`, 'success'); 
                     if(document.getElementById('dashboard').classList.contains('active')) loadDash(); 
                 });
+                socket.on('global_alert', d => {
+                    document.getElementById('broadcast-text').innerText = d.message;
+                    const modal = document.getElementById('broadcast-modal');
+                    modal.classList.add('active');
+                    setTimeout(() => document.getElementById('broadcast-content').classList.remove('scale-95'), 50);
+                });
             } catch(e) {}
         }
 
         // Auth
         async function authReq(act) {
-            const email = document.getElementById('auth-email').value, password = document.getElementById('auth-password').value, role = document.getElementById('auth-role').value;
+            let email, password, role;
+            if(act === 'login') {
+                email = document.getElementById('login-email').value;
+                password = document.getElementById('login-password').value;
+            } else {
+                email = document.getElementById('reg-email').value;
+                password = document.getElementById('reg-password').value;
+                role = document.getElementById('reg-role').value;
+            }
             if(!email || !password) return showToast("Credentials required", "error");
-            const btnId = act==='login'?'btn-login':'btn-reg', origTxt = act==='login'?'Sign In':'Create Account';
+            
+            const btnId = act==='login'?'btn-login':'btn-reg', origTxt = act==='login'?'Sign In':'Register Now';
             setLoading(btnId, true, origTxt);
             const r = await api('/auth', 'POST', {action:act, email, password, role});
             setLoading(btnId, false, origTxt);
             showToast(r.message, r.success?'success':'error');
-            if(r.success && act==='login') {
-                localStorage.setItem('token', r.token); localStorage.setItem('role', r.role); localStorage.setItem('id', r.id);
-                checkAuth(); initSocket(); navTo(r.role==='admin'?'admin': r.role==='hospital'?'hospital':'dashboard');
+            
+            if(r.success) {
+                if(act==='login') {
+                    localStorage.setItem('token', r.token); localStorage.setItem('role', r.role); localStorage.setItem('id', r.id);
+                    checkAuth(); initSocket(); navTo(r.role==='admin'?'admin': r.role==='hospital'?'hospital':'dashboard');
+                } else {
+                    switchAuthTab('login');
+                    document.getElementById('login-email').value = email;
+                }
             }
         }
         function logout() { localStorage.clear(); if(socket) {socket.disconnect(); socket=null;} checkAuth(); navTo('home'); showToast('Session terminated','info');}
 
-        // --- NEW: INTERACTIVE MAP PICKER LOGIC ---
+        // Map Picker
         let pickerMap, pickerMarker, pickerContext;
-
         function openMapPicker(ctx) {
             pickerContext = ctx;
             document.getElementById('map-picker-modal').classList.add('active');
-            
-            // Wait for modal transition then initialize map if not already done
             setTimeout(() => {
                 if(typeof google === 'undefined' || !google.maps) {
                     document.getElementById('picker-map-canvas').innerHTML = "<div class='flex items-center justify-center h-full text-rose-500 text-sm font-bold bg-gray-900 rounded-xl'>Google Maps API Key Missing. Add it in index.html to enable this feature.</div>";
                     return;
                 }
-
                 if(!pickerMap) {
                     pickerMap = new google.maps.Map(document.getElementById("picker-map-canvas"), {
                         center: userCoords ? {lat: parseFloat(userCoords.lat), lng: parseFloat(userCoords.lon)} : {lat: 26.4499, lng: 80.3319}, 
@@ -558,36 +676,22 @@
                         styles: [{elementType:"geometry",stylers:[{color:"#111111"}]},{elementType:"labels.text.stroke",stylers:[{color:"#111111"}]},{elementType:"labels.text.fill",stylers:[{color:"#666666"}]},{featureType:"water",stylers:[{color:"#050505"}]},{featureType:"road",stylers:[{color:"#222222"}]}],
                         disableDefaultUI: true 
                     });
-                    
                     pickerMap.addListener("click", (e) => {
                         if(pickerMarker) pickerMarker.setMap(null);
-                        pickerMarker = new google.maps.Marker({
-                            position: e.latLng, 
-                            map: pickerMap, 
-                            animation: google.maps.Animation.DROP,
-                            icon: {path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#3b82f6", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff"}
-                        });
+                        pickerMarker = new google.maps.Marker({ position: e.latLng, map: pickerMap, animation: google.maps.Animation.DROP, icon: {path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#3b82f6", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff"} });
                     });
-                } else if (userCoords) {
-                    pickerMap.setCenter({lat: parseFloat(userCoords.lat), lng: parseFloat(userCoords.lon)});
-                }
+                } else if (userCoords) { pickerMap.setCenter({lat: parseFloat(userCoords.lat), lng: parseFloat(userCoords.lon)}); }
             }, 100);
         }
-
         function confirmPinnedLocation() {
-            if(!pickerMarker) return showToast("Please click on the map to drop a pin first.", "error");
-            
+            if(!pickerMarker) return showToast("Click on the map to drop a pin.", "error");
             userCoords = { lat: pickerMarker.getPosition().lat(), lon: pickerMarker.getPosition().lng() };
-            document.getElementById(pickerContext + '-lat').value = userCoords.lat.toFixed(6);
-            document.getElementById(pickerContext + '-lon').value = userCoords.lon.toFixed(6);
-            
-            closeMapPicker();
-            showToast("Location pinned successfully!", "success");
+            document.getElementById(pickerContext + '-lat').value = userCoords.lat.toFixed(6); document.getElementById(pickerContext + '-lon').value = userCoords.lon.toFixed(6);
+            closeMapPicker(); showToast("Location pinned!", "success");
         }
-
         function closeMapPicker() { document.getElementById('map-picker-modal').classList.remove('active'); }
 
-        // Auto GPS Detect
+        // GPS
         function getLocation(ctx='prof') {
             navigator.geolocation.getCurrentPosition(p => {
                 userCoords = {lat: p.coords.latitude, lon: p.coords.longitude};
@@ -604,7 +708,7 @@
             setLoading('btn-save-prof', true, 'Save Configuration');
             const fd = new FormData();
             fd.append('name', document.getElementById('prof-name').value); fd.append('blood_group', document.getElementById('prof-bg').value);
-            fd.append('lat', document.getElementById('prof-lat').value); fd.append('lon', document.getElementById('prof-lon').value);
+            fd.append('lat', document.getElementById('prof-lat').value || ''); fd.append('lon', document.getElementById('prof-lon').value || '');
             fd.append('available', document.getElementById('prof-avail').checked);
             const file = document.getElementById('prof-doc').files[0]; if(file) fd.append('document', file);
             const r = await api('/profile/update', 'POST', fd, true);
@@ -615,7 +719,7 @@
         async function saveHospitalProfile() {
             setLoading('btn-save-hosp', true, 'Update Facility Details');
             const fd = new FormData();
-            fd.append('name', document.getElementById('hosp-name').value); fd.append('lat', document.getElementById('hosp-lat').value); fd.append('lon', document.getElementById('hosp-lon').value);
+            fd.append('name', document.getElementById('hosp-name').value); fd.append('lat', document.getElementById('hosp-lat').value || ''); fd.append('lon', document.getElementById('hosp-lon').value || '');
             const r = await api('/profile/update', 'POST', fd, true);
             setLoading('btn-save-hosp', false, 'Update Facility Details');
             showToast(r.message, r.success?'success':'error');
@@ -637,17 +741,33 @@
                 if(role === 'user') {
                     if(r.profile) {
                         document.getElementById('dash-name').innerText = r.profile.name; document.getElementById('prof-name').value = r.profile.name;
-                        document.getElementById('prof-bg').value = r.profile.blood_group; document.getElementById('prof-lat').value = r.profile.lat; document.getElementById('prof-lon').value = r.profile.lon;
-                        document.getElementById('prof-avail').checked = r.profile.available; userCoords = {lat: r.profile.lat, lon: r.profile.lon};
+                        document.getElementById('prof-bg').value = r.profile.blood_group; 
+                        document.getElementById('prof-lat').value = r.profile.lat || ''; document.getElementById('prof-lon').value = r.profile.lon || '';
+                        document.getElementById('prof-avail').checked = r.profile.available; 
+                        if(r.profile.lat && r.profile.lon) userCoords = {lat: r.profile.lat, lon: r.profile.lon};
                         document.getElementById('dash-badge').classList.toggle('hidden', !r.profile.is_verified);
+                        
+                        // Smart Eligibility Logic
+                        const statBox = document.getElementById('eligibility-status');
+                        if(r.profile.last_donation_date) {
+                            let lastDon = new Date(r.profile.last_donation_date);
+                            let daysSince = Math.floor((new Date() - lastDon) / (1000 * 60 * 60 * 24));
+                            if(daysSince < 90) {
+                                statBox.innerHTML = `<div class="text-2xl font-black text-rose-500 mb-1">Cooldown</div><div class="text-xs text-gray-400">Wait ${90 - daysSince} days to donate.</div>`;
+                            } else {
+                                statBox.innerHTML = `<div class="text-2xl font-black text-green-400 mb-1">Ready to Donate</div><div class="text-xs text-gray-400">You are eligible to save a life.</div>`;
+                            }
+                        }
                     }
                     document.getElementById('stat-req').innerText = r.requests.length; document.getElementById('stat-don').innerText = r.donations.length;
                     let html = '';
                     r.requests.forEach(rq => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">ID: ${rq.id}</span><br><b class="text-white">${rq.blood_group}</b></div><span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-black/50 ${rq.is_priority?'text-amber-400 border border-amber-500/20':'text-gray-400'}">${rq.status} ${rq.is_priority?'<i class="fa-solid fa-crown ml-1"></i>':''}</span></div>`);
-                    r.donations.forEach(dn => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">Donated</span><br><b class="text-green-400">${dn.blood_group}</b></div><button onclick="showCert('${r.profile.name}')" class="text-xs bg-white text-black px-3 py-1.5 font-bold rounded-lg hover:bg-gray-200 transition whitespace-nowrap">View Honor</button></div>`);
+                    r.donations.forEach(dn => html += `<div class="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5 mb-3"><div><span class="text-xs text-gray-500 uppercase tracking-widest">Donated</span><br><b class="text-green-400">${dn.blood_group}</b></div><button onclick="showCert('${r.profile?r.profile.name:'Hero'}')" class="text-xs bg-white text-black px-3 py-1.5 font-bold rounded-lg hover:bg-gray-200 transition whitespace-nowrap">View Honor</button></div>`);
                     document.getElementById('dash-lists').innerHTML = html || '<div class="text-center py-6 text-gray-500 text-sm font-medium">No system activity.</div>';
                 } else if(role === 'hospital' && r.profile) {
-                    document.getElementById('hosp-name').value = r.profile.name; document.getElementById('hosp-lat').value = r.profile.lat; document.getElementById('hosp-lon').value = r.profile.lon; userCoords = {lat: r.profile.lat, lon: r.profile.lon};
+                    document.getElementById('hosp-name').value = r.profile.name; 
+                    document.getElementById('hosp-lat').value = r.profile.lat || ''; document.getElementById('hosp-lon').value = r.profile.lon || ''; 
+                    if(r.profile.lat && r.profile.lon) userCoords = {lat: r.profile.lat, lon: r.profile.lon};
                     document.getElementById('stk-A+').value = r.profile.stock_ap; document.getElementById('stk-A-').value = r.profile.stock_an; document.getElementById('stk-B+').value = r.profile.stock_bp; document.getElementById('stk-B-').value = r.profile.stock_bn; document.getElementById('stk-O+').value = r.profile.stock_op; document.getElementById('stk-O-').value = r.profile.stock_on; document.getElementById('stk-AB+').value = r.profile.stock_abp; document.getElementById('stk-AB-').value = r.profile.stock_abn;
                 }
             }
@@ -685,7 +805,7 @@
                 markers.forEach(m => {if(m.setMap) m.setMap(null);}); markers = []; let html = '';
                 r.data.forEach((d,i) => {
                     const isHosp = d.type === 'hospital';
-                    html += `<div class="bg-black/40 p-4 rounded-xl flex justify-between items-center border border-white/5 ${i===0?'border-l-4 border-l-green-500 bg-green-500/5':''} transition hover:bg-gray-700"><div><b class="text-white text-sm">${isHosp? '<i class="fa-solid fa-hospital text-blue-500 mr-1"></i> ':'<i class="fa-solid fa-user text-rose-500 mr-1"></i> '} ${d.name}</b> ${d.is_verified?'<i class="fa-solid fa-certificate text-blue-400 text-xs ml-1" aria-label="Verified user"></i>':''}<br><span class="text-xs text-gray-500 font-mono mt-1 block">${d.distance_km} KM RAD</span></div><span class="text-white font-black bg-white/10 border border-white/10 px-3 py-1 rounded text-xs">${bg}</span></div>`;
+                    html += `<div class="bg-black/40 p-4 rounded-xl flex justify-between items-center border border-white/5 ${i===0?'border-l-4 border-l-green-500 bg-green-500/5':''} transition hover:bg-gray-700"><div><b class="text-white text-sm">${isHosp? '<i class="fa-solid fa-hospital text-blue-500 mr-1"></i> ':'<i class="fa-solid fa-user text-rose-500 mr-1"></i> '} ${d.name}</b> ${d.is_verified?'<i class="fa-solid fa-certificate text-blue-400 text-xs ml-1"></i>':''}<br><span class="text-xs text-gray-500 font-mono mt-1 block">${d.distance_km} KM RAD</span></div><span class="text-white font-black bg-white/10 border border-white/10 px-3 py-1 rounded text-xs">${bg}</span></div>`;
                     if(map && d.lat && d.lon) {
                         const m = new google.maps.Marker({position: {lat: d.lat, lng: d.lon}, map: map, icon: {path: isHosp? google.maps.SymbolPath.BACKWARD_CLOSED_ARROW : google.maps.SymbolPath.CIRCLE, scale: isHosp?5:6, fillColor: isHosp?"#3b82f6":"#10b981", fillOpacity: 1, strokeWeight: 2, strokeColor: "#050505"}});
                         markers.push(m);
@@ -707,61 +827,53 @@
             if(r.success) { showToast(`Signal #${r.request_id} Active. AI routing...`, 'success'); document.getElementById('boost-req-id').value = r.request_id; }
         }
 
-        // REAL RAZORPAY INTEGRATION
-        async function initiatePayment() {
-            const reqId = document.getElementById('boost-req-id').value; 
-            if(!reqId) return showToast('Input Request ID','error');
-            
-            setLoading('btn-pay-boost', true, '');
-            const r = await api('/payment/create_order', 'POST', {request_id: reqId});
-            setLoading('btn-pay-boost', false, 'Pay via Razorpay');
-            
-            if(!r.success) return showToast('Failed to connect to gateway', 'error');
+        // Razorpay Boost
+        let currentBoostReqId = null;
+        function initiatePayment() {
+            const reqId = document.getElementById('boost-req-id').value; if(!reqId) return showToast('Input Request ID','error');
+            currentBoostReqId = reqId; window.open('https://razorpay.me/@byashish', '_blank'); document.getElementById('pay-modal').classList.add('active');
+        }
 
-            var options = {
-                "key": "rzp_test_SR0otvXz1f0cJS",
-                "amount": r.amount,
-                "currency": "INR",
-                "name": "LifeDrop Network",
-                "description": "Priority Emergency Boost",
-                "image": "https://cdn-icons-png.flaticon.com/512/3063/3063205.png",
-                "order_id": r.order_id,
-                "handler": async function (response){
-                    const v = await api('/payment/verify', 'POST', {
-                        request_id: reqId,
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_signature: response.razorpay_signature
-                    });
-                    showToast(v.message, v.success ? 'success' : 'error');
-                    if(v.success) loadDash();
-                },
-                "theme": { "color": "#e11d48" }
-            };
-            var rzp = new Razorpay(options);
-            rzp.on('payment.failed', function (res){ showToast(res.error.description, 'error'); });
-            rzp.open();
+        async function submitPaymentProof() {
+            const file = document.getElementById('pay-screenshot').files[0]; if(!file) return showToast('Attach ledger screenshot','error');
+            setLoading('btn-pay-proof', true, '');
+            const fd = new FormData(); fd.append('screenshot', file); fd.append('request_id', currentBoostReqId);
+            const r = await api('/payment/priority', 'POST', fd, true);
+            setLoading('btn-pay-proof', false, 'Submit Ledger');
+            showToast(r.message, r.success?'success':'error'); if(r.success) document.getElementById('pay-modal').classList.remove('active');
         }
 
         // Power Admin
         async function loadAdmin() {
             setLoading('btn-adm-sync', true, '<span class="spinner"></span>');
             const r = await api('/admin/data');
-            setLoading('btn-adm-sync', false, '<i class="fa-solid fa-rotate"></i> Sync Data');
+            setLoading('btn-adm-sync', false, '<i class="fa-solid fa-rotate"></i> Sync Matrix');
             if(r.success) {
                 document.getElementById('adm-tot-req').innerText = r.stats.total_reqs; document.getElementById('adm-tot-don').innerText = r.stats.total_dons;
                 
-                document.getElementById('adm-users').innerHTML = r.users.map(u => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-3 md:p-4 font-mono text-gray-400">${u.id}</td><td class="p-3 md:p-4 font-medium text-white">${u.email}</td><td class="p-3 md:p-4"><span class="bg-white/10 border border-white/10 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">${u.role}</span></td><td class="p-3 md:p-4 ${u.is_banned?'text-rose-500':'text-green-500'} font-bold text-xs uppercase tracking-wider">${u.is_banned?'Locked':'Active'}</td><td class="p-3 md:p-4"><button onclick="adminAction('toggle_ban', ${u.id})" class="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 transition">Toggle Access</button></td></tr>`).join('');
+                document.getElementById('adm-users').innerHTML = r.users.map(u => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-4 font-mono text-gray-400">${u.id}</td><td class="p-4 font-medium text-white">${u.email}</td><td class="p-4"><span class="bg-white/10 border border-white/10 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">${u.role}</span></td><td class="p-4 ${u.is_banned?'text-rose-500':'text-green-500'} font-bold text-xs uppercase tracking-wider">${u.is_banned?'Locked':'Active'}</td><td class="p-4"><button onclick="adminAction('toggle_ban', ${u.id})" class="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 transition">Toggle Access</button></td></tr>`).join('');
+                document.getElementById('adm-hospitals').innerHTML = r.hospitals.map(h => `<tr class="hover:bg-white/5 transition border-b border-white/5"><td class="p-4 font-mono text-gray-400">${h.id}</td><td class="p-4 font-bold text-blue-400">${h.name}</td><td class="p-4 text-xs font-mono text-gray-500">${h.lat}, ${h.lon}</td></tr>`).join('') || `<tr><td colspan="3" class="text-center p-4 text-gray-500 text-xs">No Hospitals found.</td></tr>`;
                 
                 document.getElementById('adm-docs').innerHTML = r.donors.filter(d=>d.document_path && !d.is_verified).map(d => `<div class="p-4 bg-black/40 rounded-xl border border-white/5 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">UID:${d.id}</span> <b class="text-white text-sm ml-2">${d.name}</b></span></div><div class="flex gap-2"><a href="/uploads/${d.document_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect ID</a><button onclick="adminAction('verify_donor', ${d.id})" class="flex-1 bg-blue-600 py-2.5 rounded-lg text-xs font-bold text-white hover:bg-blue-500 transition">Grant KYC</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
                 
-                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="text-xs font-mono text-gray-400">Status: <span class="${p.status==='approved'?'text-green-500':'text-yellow-500'} uppercase font-bold">${p.status}</span></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
+                document.getElementById('adm-pays').innerHTML = r.payments.map(p => `<div class="p-4 bg-black/40 rounded-xl border border-[#d4af37]/20 mb-3"><div class="flex justify-between mb-3"><span><span class="text-xs text-gray-500 font-mono">REQ:${p.request_id}</span> <b class="text-[#d4af37] text-sm ml-2">₹${p.amount}</b></span></div><div class="flex gap-2"><a href="/uploads/${p.screenshot_path}" target="_blank" class="flex-1 bg-white/10 text-center py-2.5 rounded-lg text-xs font-bold text-white hover:bg-white/20 transition">Inspect Ledger</a><button onclick="adminAction('approve_payment', ${p.id})" class="flex-1 bg-[#d4af37] text-black py-2.5 rounded-lg text-xs font-bold hover:bg-[#c5a028] transition">Verify Boost</button></div></div>`).join('') || '<div class="h-full flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Queue Empty</div>';
+                
+                document.getElementById('adm-enqs').innerHTML = r.enquiries.map(e => `<div class="p-4 bg-black/40 rounded-xl border border-white/5"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-white">${e.email}</span><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${e.status==='open'?'bg-rose-500/20 text-rose-400':'bg-green-500/20 text-green-400'}">${e.status}</span></div><p class="text-sm text-gray-400 mb-4">${e.message}</p>${e.status==='open'?`<button onclick="adminAction('close_enquiry', ${e.id})" class="text-xs w-full bg-white/10 hover:bg-white/20 transition py-2.5 rounded-lg text-white font-bold">Close Ticket</button>`:''}</div>`).join('') || '<div class="col-span-full h-24 flex items-center justify-center text-xs font-mono text-gray-600 uppercase">Zero Active Tickets</div>';
             }
         }
 
         async function adminAction(act, id) {
             const r = await api('/admin/action', 'POST', {action: act, target_id: id});
             if(r.success) { showToast('Execution successful','success'); loadAdmin(); }
+        }
+
+        // Send Global Broadcast
+        async function sendGlobalBroadcast() {
+            const msg = document.getElementById('adm-broadcast-msg').value;
+            if(!msg) return showToast('Please enter a message to broadcast', 'error');
+            const r = await api('/admin/broadcast', 'POST', {message: msg});
+            showToast(r.message, r.success ? 'success' : 'error');
+            if(r.success) document.getElementById('adm-broadcast-msg').value = '';
         }
     </script>
 </body>
