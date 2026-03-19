@@ -1,0 +1,50 @@
+2026-03-19T04:59:01.763072703Z                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.763075563Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/helpers.py", line 552, in send_from_directory
+2026-03-19T04:59:01.763078573Z     return werkzeug.utils.send_from_directory(  # type: ignore[return-value]
+2026-03-19T04:59:01.763081313Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.763084203Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/werkzeug/utils.py", line 574, in send_from_directory
+2026-03-19T04:59:01.763087583Z     raise NotFound()
+2026-03-19T04:59:01.763105703Z werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-19T04:59:01.765034663Z Traceback (most recent call last):
+2026-03-19T04:59:01.765224816Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 880, in full_dispatch_request
+2026-03-19T04:59:01.765236577Z     rv = self.dispatch_request()
+2026-03-19T04:59:01.765240077Z          ^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.765243397Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 865, in dispatch_request
+2026-03-19T04:59:01.765246047Z     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+2026-03-19T04:59:01.765248797Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.765251237Z   File "/opt/render/project/src/app.py", line 169, in serve_root_images
+2026-03-19T04:59:01.765253737Z     if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.json', '.js')): return send_from_directory('.', filename)
+2026-03-19T04:59:01.765256157Z                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.765258547Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/helpers.py", line 552, in send_from_directory
+2026-03-19T04:59:01.765260977Z     return werkzeug.utils.send_from_directory(  # type: ignore[return-value]
+2026-03-19T04:59:01.765263327Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:01.765265707Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/werkzeug/utils.py", line 574, in send_from_directory
+2026-03-19T04:59:01.765268457Z     raise NotFound()
+2026-03-19T04:59:01.76539781Z werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-19T04:59:05.731757081Z [2026-03-19 04:59:05,731] ERROR in app: Exception on /api/dashboard [GET]
+2026-03-19T04:59:05.731782232Z Traceback (most recent call last):
+2026-03-19T04:59:05.731785832Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1473, in wsgi_app
+2026-03-19T04:59:05.731787992Z     response = self.full_dispatch_request()
+2026-03-19T04:59:05.731790252Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.731792972Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 883, in full_dispatch_request
+2026-03-19T04:59:05.731795132Z     return self.finalize_request(rv)
+2026-03-19T04:59:05.731797212Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.731799372Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 902, in finalize_request
+2026-03-19T04:59:05.731812612Z     response = self.make_response(rv)
+2026-03-19T04:59:05.731814802Z                ^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.731816802Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1174, in make_response
+2026-03-19T04:59:05.731819402Z     raise TypeError(
+2026-03-19T04:59:05.731822262Z TypeError: The view function for 'get_dashboard' did not return a valid response. The function either returned None or ended without a return statement.
+2026-03-19T04:59:05.731901254Z Traceback (most recent call last):
+2026-03-19T04:59:05.732008366Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1473, in wsgi_app
+2026-03-19T04:59:05.732014756Z     response = self.full_dispatch_request()
+2026-03-19T04:59:05.732017676Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.732021006Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 883, in full_dispatch_request
+2026-03-19T04:59:05.732023666Z     return self.finalize_request(rv)
+2026-03-19T04:59:05.732026186Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.732028717Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 902, in finalize_request
+2026-03-19T04:59:05.732031307Z     response = self.make_response(rv)
+2026-03-19T04:59:05.732033727Z                ^^^^^^^^^^^^^^^^^^^^^^
+2026-03-19T04:59:05.732036157Z   File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1174, in make_response
+2026-03-19T04:59:05.732039417Z     raise TypeError(
+2026-03-19T04:59:05.732042647Z TypeError: The view function for 'get_dashboard' did not return a valid response. The function either returned None or ended without a return statement.
